@@ -88,6 +88,7 @@ END
   sub main::WriteMakefile {
     my %args = @_;
     ExtUtils::MakeMaker::WriteMakefile(
+      LICENSE => 'perl',
       @_, AUTHOR => our $Author, ABSTRACT_FROM => $args{VERSION_FROM},
       test => { TESTS => ($args{test}{TESTS}||'').' xt/*.t' },
     );
