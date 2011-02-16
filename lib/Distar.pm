@@ -4,7 +4,7 @@ use strictures 1;
 use base qw(Exporter);
 
 our @EXPORT = qw(
-  author manifest_include
+  author manifest_include run_preflight
 );
 
 sub import {
@@ -22,7 +22,6 @@ our @Manifest = (
   'xt/lib' => '.pm',
   '' => '.PL',
   '' => qr{Changes|MANIFEST|README|META\.yml},
-  '' => qr{t/smells-of-vcs/.svn},
   'maint' => qr{[^.].*},
 );
 
@@ -49,21 +48,44 @@ sub write_manifest_skip {
   close $skip;
 }
 
+sub run_preflight {
+  system("git fetch");
+
+  for (scalar `git status`) {
+    /Your branch is (behind|ahead of)/ && die "Not synced with upstream";
+  }
+
+  for (scalar `git diff`) {
+    length && die "Oustanding changes";
+  }
+  my @cached = grep /^\+/, `git diff --cached -U0`;
+  @cached == 2 or die "Pre-commit Changes not just Changes line";
+  $cached[0] eq "+++ b/Changes\n" or die "Changes not changed";
+  my $ymd = sprintf(
+    "%i-%02i-%02i", (localtime)[5]+1900, (localtime)[4]+1, (localtime)[3]
+  );
+  $cached[1] eq "+$ARGV[0] - $ymd\n" or die "Changes new line should be: \n\n$ARGV[0] - $ymd\n ";
+}
+
 sub MY::postamble { <<'END'; }
-upload: $(DISTVNAME).tar$(SUFFIX)
-	cpan-upload $<
+preflight:
+	perl -Idistar/lib -MDistar -erun_preflight $(VERSION)
+upload: preflight disttest $(DISTVNAME).tar$(SUFFIX)
+	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 release: upload
 	git commit -a -m "Release commit for $(VERSION)"
 	git tag release_$(VERSION)
 	git push
 	git push --tags
+distdir: readmefile
+readmefile: create_distdir
+	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
 END
 
 {
   no warnings 'redefine';
   sub main::WriteMakefile {
     my %args = @_;
-    system("pod2text $args{VERSION_FROM} >README");
     ExtUtils::MakeMaker::WriteMakefile(
       @_, AUTHOR => our $Author, ABSTRACT_FROM => $args{VERSION_FROM},
       test => { TESTS => ($args{test}{TESTS}||'').' xt/*.t' },
