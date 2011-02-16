@@ -39,6 +39,7 @@ sub write_manifest_skip {
         ? $spec
         : !ref($spec)
           ? ".*\Q${spec}\E"
+            # print ref as well as stringification in case of overload ""
           : die "spec must be string or regexp, was: ${spec} (${\ref $spec})");
     push @parts, $re;
   }
