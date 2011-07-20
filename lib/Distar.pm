@@ -52,6 +52,10 @@ sub write_manifest_skip {
 sub run_preflight {
   system("git fetch");
 
+  for (scalar `make manifest 2>&1 >/dev/null`) {
+    $_ && die "make manifest changed:\n$_ Go check it and retry";
+  }
+
   for (scalar `git status`) {
     /Your branch is (behind|ahead of)/ && die "Not synced with upstream";
   }
