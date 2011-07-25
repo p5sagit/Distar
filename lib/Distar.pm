@@ -81,8 +81,8 @@ upload: preflight $(DISTVNAME).tar$(SUFFIX)
 release: upload
 	git commit -a -m "Release commit for $(VERSION)"
 	git tag release_$(VERSION) -m "release $(VERSION)"
-	git push
 	git push --tags
+	git push
 distdir: readmefile
 readmefile: create_distdir
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
