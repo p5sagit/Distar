@@ -80,7 +80,7 @@ upload: preflight $(DISTVNAME).tar$(SUFFIX)
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 release: upload
 	git commit -a -m "Release commit for $(VERSION)"
-	git tag release_$(VERSION) -m "release $(VERSION)"
+	git tag v$(VERSION) -m "release v$(VERSION)"
 	git push --tags
 	git push
 distdir: readmefile
