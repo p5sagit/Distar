@@ -14,6 +14,8 @@ sub import {
 
 sub author { our $Author = shift }
 
+our $Ran_Preflight;
+
 our @Manifest = (
   'lib' => '.pm',
   't' => '.t',
@@ -50,6 +52,8 @@ sub write_manifest_skip {
 }
 
 sub run_preflight {
+  $Ran_Preflight = 1;
+
   system("git fetch");
 
   for (scalar `make manifest 2>&1 >/dev/null`) {
@@ -103,7 +107,7 @@ END
 }
 
 END {
-  write_manifest_skip()
+  write_manifest_skip() unless $Ran_Preflight
 }
 
 1;
