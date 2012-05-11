@@ -81,9 +81,10 @@ sub run_preflight {
 sub MY::postamble { <<'END'; }
 preflight:
 	perl -IDistar/lib -MDistar -erun_preflight $(VERSION)
-upload: preflight $(DISTVNAME).tar$(SUFFIX)
+release: preflight disttest
+	rm -rf $(DISTVNAME)
+	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
-release: upload
 	git commit -a -m "Release commit for $(VERSION)"
 	git tag v$(VERSION) -m "release v$(VERSION)"
 	git push --tags
