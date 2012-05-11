@@ -1,0 +1,102 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings FATAL => 'all';
+use File::Path qw(mkpath);
+
+my $project = $ARGV[0] or die "No project name passed";
+
+my @parts = split('-', $project);
+
+my $lib_file = join('/', 'lib', @parts).".pm";
+
+my $author = $ENV{DISTAR_INIT_AUTHOR} or die "DISTAR_INIT_AUTHOR unset";
+
+mkpath "${project}/maint";
+
+mkpath join('/', $project, 'lib', @parts[0..$#parts-1]);
+
+open my $mpl_main, '>', "${project}/Makefile.PL"
+  or die "couldn't open Makefile.PL: $!";
+
+print $mpl_main sprintf(<<'END', $project, $lib_file);
+use strict;
+use warnings FATAL => 'all';
+use ExtUtils::MakeMaker;
+
+(do 'maint/Makefile.PL.include' or die $@) unless -f 'META.yml';
+
+WriteMakefile(
+  NAME => '%s',
+  VERSION_FROM => '%s'
+);
+END
+
+close($mpl_main);
+
+open my $mpl_maint, '>', "${project}/maint/Makefile.PL.include"
+  or die "couldn't open maint/Makefile.PL.include: $!";
+
+print $mpl_maint sprintf(<<'END', $author);
+BEGIN {
+  -e 'Distar'
+    or system("git clone git://git.shadowcat.co.uk/p5sagit/Distar.git")
+}
+use lib 'Distar/lib';
+use Distar;
+
+author '%s';
+END
+
+close($mpl_maint);
+
+open my $pm, '>', "${project}/${lib_file}"
+  or die "Couldn't open .pm file: $!";
+
+my $package_name = join('::', @parts);
+
+my $year = 1900+(localtime)[5];
+
+my $mod_text = sprintf(<<'END', $package_name, $package_name, $author, $year, $package_name);
+ package %s;
+
+ our $VERSION = '0.000001'; # 0.0.1
+
+ $VERSION = eval $VERSION;
+
+ 1;
+
+ =head1 NAME
+
+ %s - Description goes here
+
+ =head1 SYNOPSIS
+
+ =head1 DESCRIPTION
+
+ =head1 AUTHOR
+
+  %s
+
+ =head1 CONTRIBUTORS
+
+ None yet - maybe this software is perfect! (ahahahahahahahahaha)
+
+ =head1 COPYRIGHT
+
+ Copyright (c) %s the %s L</AUTHOR> and L</CONTRIBUTORS>
+ as listed above.
+ 
+ =head1 LICENSE
+ 
+ This library is free software and may be distributed under the same terms
+ as perl itself.
+END
+
+$mod_text =~ s/^ //mg;
+
+print $pm $mod_text;
+
+close $mod_text;
+
+chdir($project); system("git init");
