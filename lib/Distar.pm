@@ -81,7 +81,8 @@ sub run_preflight {
 sub MY::postamble { <<'END'; }
 preflight:
 	perl -IDistar/lib -MDistar -erun_preflight $(VERSION)
-release: preflight disttest
+release: preflight
+	$(MAKE) disttest
 	rm -rf $(DISTVNAME)
 	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
