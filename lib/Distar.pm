@@ -98,8 +98,7 @@ release: preflight
 distdir: readmefile
 readmefile: create_distdir
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
-	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) -MExtUtils::Manifest=maniadd -e 'eval { maniadd({q{README} => q{README file (added by Distar)}}) } ' \
-	  -e '    or print "Could not add README to MANIFEST: $${'\''@'\''}\n"' --
+	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-readme-to-manifest
 END
 
 {
