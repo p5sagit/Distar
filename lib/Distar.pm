@@ -4,6 +4,7 @@ use strictures 1;
 use base qw(Exporter);
 
 use Config;
+use File::Spec;
 
 our @EXPORT = qw(
   author manifest_include run_preflight
@@ -59,7 +60,7 @@ sub run_preflight {
   system("git fetch");
 
   my $make = $Config{make};
-  my $null = $^O ne 'MSWin32' ? "/dev/null" : "NUL";
+  my $null = File::Spec->devnull;
 
   for (scalar `"$make" manifest 2>&1 >$null`) {
     $_ && die "$make manifest changed:\n$_ Go check it and retry";
