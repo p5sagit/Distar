@@ -59,8 +59,9 @@ sub run_preflight {
   system("git fetch");
 
   my $make = $Config{make};
+  my $null = $^O ne 'MSWin32' ? "/dev/null" : "NUL";
 
-  for (scalar `"$make" manifest 2>&1 >/dev/null`) {
+  for (scalar `"$make" manifest 2>&1 >$null`) {
     $_ && die "$make manifest changed:\n$_ Go check it and retry";
   }
 
