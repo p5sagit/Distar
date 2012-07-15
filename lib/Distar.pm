@@ -3,6 +3,8 @@ package Distar;
 use strictures 1;
 use base qw(Exporter);
 
+use Config;
+
 our @EXPORT = qw(
   author manifest_include run_preflight
 );
@@ -56,8 +58,10 @@ sub run_preflight {
 
   system("git fetch");
 
-  for (scalar `make manifest 2>&1 >/dev/null`) {
-    $_ && die "make manifest changed:\n$_ Go check it and retry";
+  my $make = $Config{make};
+
+  for (scalar `"$make" manifest 2>&1 >/dev/null`) {
+    $_ && die "$make manifest changed:\n$_ Go check it and retry";
   }
 
   for (scalar `git status`) {
