@@ -72,7 +72,7 @@ sub run_preflight {
   }
 
   for (scalar `git diff`) {
-    length && die "Oustanding changes";
+    length && die "Outstanding changes";
   }
   my $ymd = sprintf(
     "%i-%02i-%02i", (localtime)[5]+1900, (localtime)[4]+1, (localtime)[3]
