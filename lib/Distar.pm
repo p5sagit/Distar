@@ -68,7 +68,7 @@ sub run_preflight {
 
   for (scalar `git status`) {
     /^# On branch master/ || die "Not on master. EEEK";
-    /Your branch is (behind|ahead of)/ && die "Not synced with upstream";
+    /Your branch is behind|Your branch and .*? have diverged/ && die "Not synced with upstream";
   }
 
   for (scalar `git diff`) {
