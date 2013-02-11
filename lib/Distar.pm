@@ -84,7 +84,9 @@ sub run_preflight {
   $cached[1] eq "+$ARGV[0] - $ymd\n" or die "Changes new line should be: \n\n$ARGV[0] - $ymd\n ";
 }
 
-sub MY::postamble { <<'END'; }
+sub MY::postamble {
+    open my $fh, '<', 'maint/Makefile.include';
+    ($fh ? do { local $/; <$fh> } : '' ) . <<'END';
 preflight:
 	perl -IDistar/lib -MDistar -erun_preflight $(VERSION)
 release: preflight
@@ -101,6 +103,7 @@ readmefile: create_distdir
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
 	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-readme-to-manifest
 END
+}
 
 {
   no warnings 'redefine';
