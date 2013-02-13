@@ -85,8 +85,7 @@ sub run_preflight {
 }
 
 sub MY::postamble {
-    open my $fh, '<', 'maint/Makefile.include';
-    ($fh ? do { local $/; <$fh> } : '' ) . <<'END';
+    my $post = <<'END';
 preflight:
 	perl -IDistar/lib -MDistar -erun_preflight $(VERSION)
 release: preflight
@@ -103,6 +102,10 @@ readmefile: create_distdir
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
 	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-readme-to-manifest
 END
+    if (open my $fh, '<', 'maint/Makefile.include') {
+        $post .= do { local $/; <$fh> };
+    }
+    return $post;
 }
 
 {
