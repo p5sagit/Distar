@@ -78,7 +78,7 @@ sub run_preflight {
     "%i-%02i-%02i", (localtime)[5]+1900, (localtime)[4]+1, (localtime)[3]
   );
   my @cached = grep /^\+/, `git diff --cached -U0`;
-  @cached > 0 or die "Please add:\n\n$ARGV[0] - $ymd\n\nto Changes and git add";
+  @cached > 0 or die "Please add:\n\n$ARGV[0] - $ymd\n\nto Changes stage Changes (git add Changes)";
   @cached == 2 or die "Pre-commit Changes not just Changes line";
   $cached[0] =~ /^\+\+\+ .\/Changes\n/ or die "Changes not changed";
   $cached[1] eq "+$ARGV[0] - $ymd\n" or die "Changes new line should be: \n\n$ARGV[0] - $ymd\n ";
