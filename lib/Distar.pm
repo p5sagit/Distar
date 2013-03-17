@@ -95,8 +95,8 @@ release: preflight
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 	git commit -a -m "Release commit for $(VERSION)"
 	git tag v$(VERSION) -m "release v$(VERSION)"
-	git push --tags
-	git push
+	git push --tags origin
+	git push origin HEAD
 distdir: readmefile
 readmefile: create_distdir
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
