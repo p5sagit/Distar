@@ -16,10 +16,12 @@ mkpath "${project}/maint";
 
 mkpath join('/', $project, 'lib', @parts[0..$#parts-1]);
 
+my $package_name = join('::', @parts);
+
 open my $mpl_main, '>', "${project}/Makefile.PL"
   or die "couldn't open Makefile.PL: $!";
 
-print $mpl_main sprintf(<<'END', $project, $lib_file);
+print $mpl_main sprintf(<<'END', $package_name, $lib_file);
 use strict;
 use warnings FATAL => 'all';
 use ExtUtils::MakeMaker;
@@ -52,8 +54,6 @@ close($mpl_maint);
 
 open my $pm, '>', "${project}/${lib_file}"
   or die "Couldn't open .pm file: $!";
-
-my $package_name = join('::', @parts);
 
 my $year = 1900+(localtime)[5];
 
