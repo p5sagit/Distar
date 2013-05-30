@@ -92,9 +92,9 @@ release: preflight
 	$(MAKE) disttest
 	rm -rf $(DISTVNAME)
 	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
-	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 	git commit -a -m "Release commit for $(VERSION)"
 	git tag v$(VERSION) -m "release v$(VERSION)"
+	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 	git push --tags origin
 	git push origin HEAD
 distdir: readmefile
