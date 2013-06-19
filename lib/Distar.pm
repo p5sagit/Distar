@@ -85,6 +85,8 @@ sub run_preflight {
 }
 
 sub MY::postamble {
+    my ($self, %extra) = @_;
+
     my $post = <<'END';
 preflight:
 	perl -IDistar/lib -MDistar -erun_preflight $(VERSION)
@@ -104,6 +106,7 @@ END
     if (open my $fh, '<', 'maint/Makefile.include') {
         $post .= do { local $/; <$fh> };
     }
+    $post .= "\n" . join('', %extra) if keys %extra;
     return $post;
 }
 
