@@ -2,6 +2,8 @@ package Distar;
 
 use strictures 1;
 use base qw(Exporter);
+use ExtUtils::MakeMaker ();
+use ExtUtils::MM ();
 
 use Config;
 use File::Spec;
@@ -63,7 +65,6 @@ sub run_preflight {
   my $make = $Config{make};
   my $null = File::Spec->devnull;
 
-  require ExtUtils::MakeMaker;
   require File::Find;
   File::Find::find({ no_chdir => 1, wanted => sub {
     return
@@ -95,10 +96,27 @@ sub run_preflight {
   $cached[1] eq "+$version - $ymd\n" or die "Changes new line should be: \n\n$version - $ymd\n ";
 }
 
-sub MY::postamble {
-    my ($self, %extra) = @_;
+{
+  package Distar::MM;
+  our @ISA = @ExtUtils::MM::ISA;
+  @ExtUtils::MM::ISA = (__PACKAGE__);
 
-    my $post = <<'END';
+  sub new {
+    my ($class, $args) = @_;
+    return $class->SUPER::new({
+      LICENSE => 'perl',
+      %$args,
+      AUTHOR => $Distar::Author,
+      ABSTRACT_FROM => $args->{VERSION_FROM},
+      test => { TESTS => ($args->{test}{TESTS}||'t/*.t').' xt/*.t' },
+    });
+  }
+
+  sub dist_test {
+    my $self = shift;
+    my $dist_test = $self->SUPER::dist_test(@_) . <<'END';
+
+# --- Distar section:
 preflight:
 	perl -IDistar/lib -MDistar -erun_preflight $(VERSION)
 release: preflight
@@ -113,27 +131,12 @@ distdir: readmefile
 readmefile: create_distdir
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
 	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-readme-to-manifest
+
 END
     if (open my $fh, '<', 'maint/Makefile.include') {
-        $post .= do { local $/; <$fh> };
+      $dist_test .= do { local $/; <$fh> };
     }
-
-    # add on any extra args that WriteMakefile chose to pass us
-    # (note that Devel::Declare, and possibly others, use this)
-    $post .= "\n" . join('', %extra) if keys %extra;
-
-    return $post;
-}
-
-{
-  no warnings 'redefine';
-  sub main::WriteMakefile {
-    my %args = @_;
-    ExtUtils::MakeMaker::WriteMakefile(
-      LICENSE => 'perl',
-      @_, AUTHOR => our $Author, ABSTRACT_FROM => $args{VERSION_FROM},
-      test => { TESTS => ($args{test}{TESTS}||'t/*.t').' xt/*.t' },
-    );
+    return $dist_test;
   }
 }
 
