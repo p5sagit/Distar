@@ -106,7 +106,11 @@ END
     if (open my $fh, '<', 'maint/Makefile.include') {
         $post .= do { local $/; <$fh> };
     }
+
+    # add on any extra args that WriteMakefile chose to pass us
+    # (note that Devel::Declare, and possibly others, use this)
     $post .= "\n" . join('', %extra) if keys %extra;
+
     return $post;
 }
 
