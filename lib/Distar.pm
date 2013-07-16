@@ -56,11 +56,22 @@ sub write_manifest_skip {
 
 sub run_preflight {
   $Ran_Preflight = 1;
+  my $version = $ARGV[0];
 
   system("git fetch");
 
   my $make = $Config{make};
   my $null = File::Spec->devnull;
+
+  require ExtUtils::MakeMaker;
+  require File::Find;
+  File::Find::find({ no_chdir => 1, wanted => sub {
+    return
+      unless -f && /\.pm$/;
+    my $file_version = MM->parse_version($_);
+    die "Module $_ version $file_version doesn't match dist version $version"
+      unless $file_version eq 'undef' || $file_version eq $version;
+  }}, 'lib');
 
   for (scalar `"$make" manifest 2>&1 >$null`) {
     $_ && die "$make manifest changed:\n$_ Go check it and retry";
@@ -78,10 +89,10 @@ sub run_preflight {
     "%i-%02i-%02i", (localtime)[5]+1900, (localtime)[4]+1, (localtime)[3]
   );
   my @cached = grep /^\+/, `git diff --cached -U0`;
-  @cached > 0 or die "Please add:\n\n$ARGV[0] - $ymd\n\nto Changes stage Changes (git add Changes)";
+  @cached > 0 or die "Please add:\n\n$version - $ymd\n\nto Changes stage Changes (git add Changes)";
   @cached == 2 or die "Pre-commit Changes not just Changes line";
   $cached[0] =~ /^\+\+\+ .\/Changes\n/ or die "Changes not changed";
-  $cached[1] eq "+$ARGV[0] - $ymd\n" or die "Changes new line should be: \n\n$ARGV[0] - $ymd\n ";
+  $cached[1] eq "+$version - $ymd\n" or die "Changes new line should be: \n\n$version - $ymd\n ";
 }
 
 sub MY::postamble {
