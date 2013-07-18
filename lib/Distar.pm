@@ -8,6 +8,9 @@ use ExtUtils::MM ();
 use Config;
 use File::Spec;
 
+our $VERSION = '0.001000';
+$VERSION = eval $VERSION;
+
 our @EXPORT = qw(
   author manifest_include run_preflight
 );
