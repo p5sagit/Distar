@@ -40,7 +40,6 @@ sub manifest_include {
 }
 
 sub write_manifest_skip {
-  use autodie;
   my @files = @Manifest;
   my @parts;
   while (my ($dir, $spec) = splice(@files, 0, 2)) {
@@ -54,7 +53,8 @@ sub write_manifest_skip {
     push @parts, $re;
   }
   my $final = '^(?!'.join('|', map "${_}\$", @parts).')';
-  open my $skip, '>', 'MANIFEST.SKIP';
+  open my $skip, '>', 'MANIFEST.SKIP'
+    or die "can't open MANIFEST.SKIP: $!";
   print $skip "${final}\n";
   close $skip;
 }
