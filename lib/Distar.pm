@@ -63,10 +63,13 @@ sub run_preflight {
   $Ran_Preflight = 1;
   my $version = $ARGV[0];
 
-  system("git fetch");
-
   my $make = $Config{make};
   my $null = File::Spec->devnull;
+
+  system("git fetch");
+  if (system("git rev-parse --quiet --verify v$version >$null") == 0) {
+    die "Tag v$version already exists!";
+  }
 
   require File::Find;
   File::Find::find({ no_chdir => 1, wanted => sub {
