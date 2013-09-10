@@ -95,7 +95,7 @@ sub run_preflight {
   my $ymd = sprintf(
     "%i-%02i-%02i", (localtime)[5]+1900, (localtime)[4]+1, (localtime)[3]
   );
-  my $changes_line = "$version   $ymd\n";
+  my $changes_line = "$version - $ymd\n";
   my @cached = grep /^\+/, `git diff --cached -U0`;
   @cached > 0 or die "Please add:\n\n$changes_line\nto Changes stage Changes (git add Changes)";
   @cached == 2 or die "Pre-commit Changes not just Changes line";
