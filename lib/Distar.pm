@@ -108,6 +108,20 @@ sub run_preflight {
   $? and die "cpan-upload not available";
 }
 
+sub contributors {
+  my @contribs = `git shortlog -s --email`;
+  for (@contribs) {
+    chomp;
+    utf8::decode($_);
+    s/\s*\d+\s*//;
+  }
+  if ($Distar::Author =~ /(\<[^<>]+\@[^<>]\>)/) {
+    my $author_email = $1;
+    @contribs = grep !/\Q$author_email\E/, @contribs;
+  }
+  return \@contribs;
+}
+
 {
   package Distar::MM;
   our @ISA = @ExtUtils::MM::ISA;
@@ -115,13 +129,15 @@ sub run_preflight {
 
   sub new {
     my ($class, $args) = @_;
-    return $class->SUPER::new({
+    my $self = $class->SUPER::new({
       LICENSE => 'perl',
       %$args,
       AUTHOR => $Distar::Author,
       ABSTRACT_FROM => $args->{VERSION_FROM},
       test => { TESTS => ($args->{test}{TESTS}||'t/*.t').' xt/*.t xt/*/*.t' },
     });
+
+    $self->{META_MERGE}{x_contributors} = Distar::contributors();
   }
 
   sub flush {
