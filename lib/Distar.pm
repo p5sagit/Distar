@@ -156,6 +156,12 @@ sub _clone {
 
     Distar::write_manifest_skip($self)
       unless $maniskip_tracked;
+
+    my @results = @{$self->{RESULT}};
+    if ($MM_VER < 7) {
+      utf8::encode($_) for @results;
+    }
+    local $self->{RESULT} = \@results;
     $self->SUPER::flush(@_);
   }
 
