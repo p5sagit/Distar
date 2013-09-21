@@ -126,9 +126,9 @@ sub run_preflight {
 
   sub flush {
     my ($self, @args) = @_;
-    my @result = @{$self->{RESULT}};
-    utf8::encode($_) for @result;
-    local $self->{RESULT} = \@result;
+    my @results = @{$self->{RESULT}};
+    utf8::encode($_) for @results;
+    local $self->{RESULT} = \@results;
     $self->SUPER::flush(@args);
   }
 
