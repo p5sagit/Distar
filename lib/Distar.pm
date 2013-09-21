@@ -124,6 +124,14 @@ sub run_preflight {
     });
   }
 
+  sub flush {
+    my ($self, @args) = @_;
+    my @result = @{$self->{RESULT}};
+    utf8::encode($_) for @result;
+    local $self->{RESULT} = \@result;
+    $self->SUPER::flush(@args);
+  }
+
   sub dist_test {
     my $self = shift;
     my $manicheck = '$(PERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"';
