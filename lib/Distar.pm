@@ -1,6 +1,7 @@
 package Distar;
 
-use strictures 1;
+use strict;
+use warnings FATAL => 'all';
 use base qw(Exporter);
 use ExtUtils::MakeMaker ();
 use ExtUtils::MM ();
