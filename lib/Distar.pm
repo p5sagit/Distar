@@ -86,7 +86,7 @@ sub run_preflight {
   }
 
   for (scalar `git status`) {
-    /^# On branch master/ || die "Not on master. EEEK";
+    /^(?:# )?On branch master/ || die "Not on master. EEEK";
     /Your branch is behind|Your branch and .*? have diverged/ && die "Not synced with upstream";
   }
 
