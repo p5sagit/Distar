@@ -116,7 +116,7 @@ sub run_preflight {
       %$args,
       AUTHOR => $Distar::Author,
       ABSTRACT_FROM => $args->{VERSION_FROM},
-      test => { TESTS => ($args->{test}{TESTS}||'t/*.t').' xt/*.t' },
+      test => { TESTS => ($args->{test}{TESTS}||'t/*.t').' xt/*.t xt/*/*.t' },
     });
   }
 
