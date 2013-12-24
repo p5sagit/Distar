@@ -122,7 +122,10 @@ sub run_preflight {
 
   sub dist_test {
     my $self = shift;
-    my $dist_test = $self->SUPER::dist_test(@_) . <<'END';
+    my $test = $self->cd('$(DISTVNAME)',
+      '$(PERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"'
+    );
+    my $dist_test = $self->SUPER::dist_test(@_) . sprintf(<<'END', $test);
 
 # --- Distar section:
 preflight:
@@ -139,6 +142,9 @@ distdir: readmefile
 readmefile: create_distdir
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
 	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-readme-to-manifest
+disttest: distmanicheck
+distmanicheck: distdir
+	%s
 
 END
     if (open my $fh, '<', 'maint/Makefile.include') {
