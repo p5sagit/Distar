@@ -122,9 +122,9 @@ sub run_preflight {
 
   sub dist_test {
     my $self = shift;
-    my $test = $self->cd('$(DISTVNAME)',
-      '$(PERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"'
-    );
+    my $manicheck = '$(PERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"';
+    my $test = $self->can('cd') ? $self->cd('$(DISTVNAME)', $manicheck)
+                                : 'cd $(DISTVNAME) && ' . $manicheck;
     my $dist_test = $self->SUPER::dist_test(@_) . sprintf(<<'END', $test);
 
 # --- Distar section:
