@@ -102,6 +102,9 @@ sub run_preflight {
   @cached == 2 or die "Pre-commit Changes not just Changes line";
   $cached[0] =~ /^\+\+\+ .\/Changes\n/ or die "Changes not changed";
   $cached[1] eq "+$changes_line" or die "Changes new line should be: \n\n$changes_line ";
+
+  { no warnings 'exec'; `cpan-upload -h`; }
+  $? and die "cpan-upload not available";
 }
 
 {
