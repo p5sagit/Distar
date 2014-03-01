@@ -17,7 +17,8 @@ our @EXPORT = qw(
 );
 
 sub import {
-  strictures->import;
+  strict->import;
+  warnings->import(FATAL => 'all');
   shift->export_to_level(1,@_);
 }
 
