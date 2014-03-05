@@ -108,6 +108,24 @@ sub run_preflight {
   $? and die "cpan-upload not available";
 }
 
+sub provides {
+  my ($meta) = @_;
+  eval {
+    require CPAN::Meta;
+    require Module::Metadata;
+  } or return;
+  my $meta_obj = CPAN::Meta->new($meta, { lazy_validation => 1 });
+  my @files = `git ls-files`;
+  chomp @files;
+  my $provides = Module::Metadata->package_versions_from_directory('.', \@files);
+  for my $module (keys %$provides) {
+    delete $provides->{$module}
+      unless $meta_obj->should_index_package($module)
+        && $meta_obj->should_index_file($provides->{$module}{file});
+  }
+  return $provides;
+}
+
 {
   package Distar::MM;
   our @ISA = @ExtUtils::MM::ISA;
@@ -115,13 +133,18 @@ sub run_preflight {
 
   sub new {
     my ($class, $args) = @_;
-    return $class->SUPER::new({
+    my $self = $class->SUPER::new({
       LICENSE => 'perl',
       %$args,
       AUTHOR => $Distar::Author,
       ABSTRACT_FROM => $args->{VERSION_FROM},
       test => { TESTS => ($args->{test}{TESTS}||'t/*.t').' xt/*.t xt/*/*.t' },
     });
+    if ($self->can('mymeta')
+        and my $provides = Distar::provides($self->mymeta)) {
+      $self->{META_MERGE}{provides} = $provides;
+    }
+    return $self;
   }
 
   sub dist_test {
