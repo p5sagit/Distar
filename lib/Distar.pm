@@ -12,6 +12,8 @@ use File::Spec;
 our $VERSION = '0.001000';
 $VERSION = eval $VERSION;
 
+my $MM_VER = eval $ExtUtils::MakeMaker::VERSION;
+
 our @EXPORT = qw(
   author manifest_include run_preflight
 );
@@ -22,7 +24,11 @@ sub import {
   shift->export_to_level(1,@_);
 }
 
-sub author { our $Author = shift }
+sub author {
+  our $Author = shift;
+  $Author = [ $Author ]
+    if !ref $Author;
+}
 
 our $Ran_Preflight;
 
@@ -118,7 +124,7 @@ sub run_preflight {
     return $class->SUPER::new({
       LICENSE => 'perl',
       %$args,
-      AUTHOR => $Distar::Author,
+      AUTHOR => ($MM_VER >= 6.5702 ? $Distar::Author : $Distar::Author->[0]),
       ABSTRACT_FROM => $args->{VERSION_FROM},
       test => { TESTS => ($args->{test}{TESTS}||'t/*.t').' xt/*.t xt/*/*.t' },
     });
