@@ -123,6 +123,7 @@ sub run_preflight {
     my ($class, $args) = @_;
     return $class->SUPER::new({
       LICENSE => 'perl',
+      MIN_PERL_VERSION => '5.006',
       %$args,
       AUTHOR => ($MM_VER >= 6.5702 ? $Distar::Author : $Distar::Author->[0]),
       ABSTRACT_FROM => $args->{VERSION_FROM},
