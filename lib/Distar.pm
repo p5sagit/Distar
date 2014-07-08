@@ -101,7 +101,7 @@ sub run_preflight {
     length && die "Outstanding changes";
   }
   my $ymd = sprintf(
-    "%i-%02i-%02i", (localtime)[5]+1900, (localtime)[4]+1, (localtime)[3]
+    "%i-%02i-%02i", (gmtime)[5]+1900, (gmtime)[4]+1, (gmtime)[3]
   );
   my $changes_line = "$version - $ymd\n";
   my @cached = grep /^\+/, `git diff --cached -U0`;
