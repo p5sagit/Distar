@@ -34,6 +34,7 @@ our $Ran_Preflight;
 
 our @Manifest = (
   'lib' => '.pm',
+  'lib' => '.pod',
   't' => '.t',
   't/lib' => '.pm',
   'xt' => '.t',
