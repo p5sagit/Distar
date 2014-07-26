@@ -15,7 +15,7 @@ $VERSION = eval $VERSION;
 my $MM_VER = eval $ExtUtils::MakeMaker::VERSION;
 
 our @EXPORT = qw(
-  author manifest_include run_preflight
+  author manifest_include readme_generator run_preflight
 );
 
 sub import {
@@ -46,6 +46,14 @@ our @Manifest = (
 
 sub manifest_include {
   push @Manifest, @_;
+}
+
+my $readme_generator = <<README;
+	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
+	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-readme-to-manifest
+README
+sub readme_generator {
+    $readme_generator = shift;
 }
 
 sub write_manifest_skip {
@@ -134,7 +142,7 @@ sub run_preflight {
 
   sub dist_test {
     my $self = shift;
-    my $dist_test = $self->SUPER::dist_test(@_) . <<'END';
+    my $dist_test = $self->SUPER::dist_test(@_) . <<'END'
 
 # --- Distar section:
 preflight:
@@ -149,8 +157,8 @@ release: preflight
 	git push origin v$(VERSION) HEAD
 distdir: readmefile
 readmefile: create_distdir
-	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
-	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-readme-to-manifest
+END
+    . $readme_generator . <<'END';
 disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"
