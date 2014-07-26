@@ -124,8 +124,8 @@ sub run_preflight {
     return $class->SUPER::new({
       LICENSE => 'perl_5',
       MIN_PERL_VERSION => '5.006',
-      %$args,
       AUTHOR => ($MM_VER >= 6.5702 ? $Distar::Author : $Distar::Author->[0]),
+      %$args,
       ABSTRACT_FROM => $args->{VERSION_FROM},
       test => { TESTS => ($args->{test}{TESTS}||'t/*.t').' xt/*.t xt/*/*.t' },
     });
