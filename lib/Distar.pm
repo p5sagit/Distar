@@ -30,8 +30,6 @@ sub author {
     if !ref $Author;
 }
 
-our $Ran_Preflight;
-
 our @Manifest = (
   'lib' => '.pm',
   'lib' => '.pod',
@@ -77,7 +75,6 @@ sub write_manifest_skip {
 }
 
 sub run_preflight {
-  $Ran_Preflight = 1;
   my $version = $ARGV[0];
 
   my $make = $Config{make};
@@ -140,6 +137,12 @@ sub run_preflight {
     });
   }
 
+  sub flush {
+    my $self = shift;
+    Distar::write_manifest_skip();
+    $self->SUPER::flush(@_);
+  }
+
   sub dist_test {
     my $self = shift;
     my $dist_test = $self->SUPER::dist_test(@_) . <<'END'
@@ -169,10 +172,6 @@ END
     }
     return $dist_test;
   }
-}
-
-END {
-  write_manifest_skip() unless $Ran_Preflight
 }
 
 1;
