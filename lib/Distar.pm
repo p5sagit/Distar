@@ -149,7 +149,14 @@ sub run_preflight {
 
   sub dist_test {
     my $self = shift;
-    my $dist_test = $self->SUPER::dist_test(@_) . <<'END'
+    my $dist_test = $self->SUPER::dist_test(@_);
+
+    my $include = '';
+    if (open my $fh, '<', 'maint/Makefile.include') {
+      $include = "\n# --- Makefile.include:\n" . do { local $/; <$fh> };
+    }
+
+    $dist_test .= <<'END'
 
 # --- Distar section:
 preflight:
@@ -172,11 +179,21 @@ distmanicheck: create_distdir
 nextrelease:
 	$(ABSPERLRUN) Distar/helpers/add-changelog-heading $(VERSION) Changes
 	git add -p Changes
-
 END
-    if (open my $fh, '<', 'maint/Makefile.include') {
-      $dist_test .= do { local $/; <$fh> };
+
+    for my $type ('', 'minor', 'major') {
+      if ($include !~ /^bump$type:/m) {
+        my $arg = $type || '$(V)';
+        $dist_test .= <<"END"
+bump$type:
+	Distar/helpers/bump-version $arg
+	rm Makefile
+END
+      }
     }
+
+    $dist_test .= $include . "\n";
+
     return $dist_test;
   }
 }
