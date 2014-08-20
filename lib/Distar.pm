@@ -134,6 +134,10 @@ sub run_preflight {
       %$args,
       ABSTRACT_FROM => $args->{VERSION_FROM},
       test => { TESTS => ($args->{test}{TESTS}||'t/*.t').' xt/*.t xt/*/*.t' },
+      realclean => { FILES => (
+        ($args->{realclean}{FILES}||'')
+        . ' Distar/ MANIFEST.SKIP MANIFEST MANIFEST.bak'
+      ) },
     });
   }
 
