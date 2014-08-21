@@ -186,7 +186,7 @@ END
         my $arg = $type || '$(V)';
         $dist_test .= <<"END"
 bump$type:
-	Distar/helpers/bump-version $arg
+	Distar/helpers/bump-version \$(VERSION) $arg
 	rm Makefile
 END
       }

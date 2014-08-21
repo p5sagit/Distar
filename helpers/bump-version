@@ -5,9 +5,12 @@ use warnings FATAL => 'all';
 use File::Find;
 
 sub version_parts {
-  my @parts = split /\./, shift;
-  if (@parts == 2) {
+  my $version = shift;
+  my $dotted = $version =~ s/^v//;
+  my @parts = split /\./, $version;
+  if (!$dotted && @parts == 2) {
     my $dec = pop @parts;
+    $dec =~ s/_//g;
     push @parts, $dec =~ /(\d{1,3})/g;
   }
   $_ += 0 for @parts;
@@ -16,33 +19,34 @@ sub version_parts {
   return @parts;
 }
 
-chomp(my $LATEST = qx(grep '^[0-9]' Changes | head -1 | awk '{print \$1}'));
-
-my @parts = version_parts($LATEST);
-
-my $OLD_DECIMAL = sprintf('%i.%03i%03i', @parts);
+my $old_version = shift;
 
 my %bump_part = (major => 0, minor => 1, bugfix => 2);
-
-my @new_parts = @parts;
-
 my $bump_this = $bump_part{$ARGV[0]||'bugfix'};
 
+my $new_vstring;
+my $new_decimal;
+
 if (defined $bump_this) {
+  my @new_parts = version_parts($old_version);
   $new_parts[$bump_this]++;
   $new_parts[$_] = 0 for ($bump_this+1 .. $#new_parts);
+  $new_vstring = join('.', @new_parts);
+  my $alpha_pos = index($old_version, '_');
+  my $format = '%i.' . ( '%03i' x (@new_parts - 1) );
+  $new_decimal = sprintf($format, @new_parts);
+  substr $new_decimal, $alpha_pos, 0, '_'
+    if $alpha_pos != -1;
 }
-elsif ($ARGV[0] =~ /^[0-9]+(?:\.[0-9]+)*$/) {
-  @new_parts = version_parts($ARGV[0]);
+elsif ($ARGV[0] =~ /^v?[0-9]+(?:[._][0-9]+)*$/) {
+  $new_decimal = $ARGV[0];
+  $new_vstring = join('.', version_parts($new_decimal));
 }
 else {
   die "no idea which part to bump - $ARGV[0] means nothing to me"
 }
 
-my $NEW_DECIMAL = sprintf('%i.%03i%03i', @new_parts);
-
-warn "Bumping $OLD_DECIMAL -> $NEW_DECIMAL\n";
-my $vstring = join('.', @parts);
+warn "Bumping $old_version -> $new_decimal\n";
 
 my %files;
 find({
@@ -58,18 +62,16 @@ find({
 
     $content =~ s{
       ( \$VERSION \s* = \s* )
-      (['"]?) v?([.0-9]+) \2
-      (
-        \s*;
-        (?: \s*\#\s* )?
-      )
-      (v?[.0-9]+)?
+      (['"]?) v?([0-9]+(?:[._][0-9]+)*) \2
+      ( \s*; )
+      (?:
+        (\s*\#\s*)
+        v?[.0-9]+
+      )?
     }{
-      die "unable to bump version number in $file from $OLD_DECIMAL, found $3\n"
-        if $3 ne $OLD_DECIMAL && $3 ne $vstring;
-      $1 . "'" . $NEW_DECIMAL . "'" . $4 . (
-        $5 ? $vstring : ''
-      )
+      die "unable to bump version number in $file from $old_version, found $3\n"
+        if $3 ne $old_version;
+      $1 . "'" . $new_decimal . "'" . $4 . ($5 ? $5 . $new_vstring : '')
     }xe
       or return;
 
