@@ -118,6 +118,16 @@ sub write_manifest_skip {
     $targets;
   }
 
+  sub metafile_target {
+    my $self = shift;
+    my $metafile_target = $self->SUPER::metafile_target(@_);
+    for (qw(META.yml META.json)) {
+      my $add = "\t\$(NOECHO) \$(ABSPERLRUN) Distar/helpers/add-git-commit \$(DISTVNAME)/$_\n";
+      $metafile_target =~ s{(.*\b\Q$_\E\b[^\n]*\n)}{$1$add}s;
+    }
+    $metafile_target;
+  }
+
   sub dist_test {
     my $self = shift;
 
@@ -155,8 +165,8 @@ releasetest:
 	$(MAKE) disttest RELEASE_TESTING=1 PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
 release: preflight releasetest
 	$(RM_RF) $(DISTVNAME)
-	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
 	git commit -a -m "Release commit for $(VERSION)"
+	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
 	git tag v$(VERSION) -m "release v$(VERSION)"
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 	git push origin v$(VERSION) HEAD
