@@ -1,0 +1,41 @@
+#!/usr/bin/env perl
+use strict;
+use warnings FATAL => 'all';
+
+my $version = shift;
+my @ymd = (gmtime)[5,4,3];
+$ymd[0] += 1900;
+$ymd[1] += 1;
+my $changes_line = sprintf "%s - %i-%02i-%02i\n", $version, @ymd;
+
+foreach my $changes (@ARGV) {
+    print "Adding $version heading to $changes.\n";
+    open my $fh, '+<', $changes
+      or die "Can't open $changes: $!";
+    my $content = '';
+    my $done;
+    local $/ = $/;
+    while (<$fh>) {
+        if ($done) {
+            undef $/;
+        }
+        elsif (/^v?(\d+(?:\.\d+)*)(\s+|$)/) {
+            if ($1 eq $version) {
+                die "$changes already has an entry for $version!\n";
+            }
+            else {
+                die "No changelog entries found before $1!\n";
+            }
+        }
+        elsif (/^\s+[-*+#]/) {
+            $content .= $changes_line;
+            $done = 1;
+        }
+        $content .= $_;
+    }
+
+    seek $fh, 0, 0;
+    truncate $fh, 0;
+    print { $fh } $content;
+    close $fh;
+}

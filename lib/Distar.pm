@@ -169,6 +169,9 @@ END
 disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"
+nextrelease:
+	$(ABSPERLRUN) Distar/helpers/add-changelog-heading $(VERSION) Changes
+	git add -p Changes
 
 END
     if (open my $fh, '<', 'maint/Makefile.include') {
