@@ -190,6 +190,16 @@ END_FRAG
     $out;
   }
 
+  sub metafile_target {
+    my $self = shift;
+    my $metafile_target = $self->SUPER::metafile_target(@_);
+    for (qw(META.yml META.json)) {
+      my $add = "\t\$(NOECHO) \$(ABSPERLRUN) $(HELPERS)/add-git-commit \$(DISTVNAME)/$_\n";
+      $metafile_target =~ s{(.*\b\Q$_\E\b[^\n]*\n)}{$1$add}s;
+    }
+    $metafile_target;
+  }
+
   sub dist_test {
     my $self = shift;
 

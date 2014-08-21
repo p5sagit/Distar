@@ -1,0 +1,19 @@
+#!/usr/bin/env perl
+use strict;
+use warnings FATAL => 'all';
+
+use CPAN::Meta;
+use Parse::CPAN::Meta;
+
+my $file = shift || die "need a file";
+my $meta = Parse::CPAN::Meta->load_file($file);
+
+my $commit = `git rev-parse HEAD`;
+chomp $commit;
+$meta->{x_vcs_commit} = $commit;
+
+my $tag = `git describe`;
+chomp $tag;
+$meta->{x_vcs_tag} = $tag;
+
+CPAN::Meta->new($meta)->save($file, { version => ($file =~ /\.yml$/ ? 1 : 2) });
