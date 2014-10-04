@@ -79,6 +79,31 @@ find({
   },
 }, 'lib');
 
+MAKEFILE_PL: {
+  my $file = 'Makefile.PL';
+  open my $fh, '<', $file
+    or die "can't open $file: $!";
+  my $content = do { local $/; <$fh> };
+  close $fh;
+
+  $content =~ s{
+    ( version \s* => \s* )
+    (['"]?) v?([0-9]+(?:[._][0-9]+)*) \2
+    ( \s*, )
+    (?:
+      (\s*\#\s*)
+      v?[.0-9]+
+    )?
+  }{
+    die "unable to bump version number in $file from $old_version, found $3\n"
+      if $3 ne $old_version;
+    $1 . "'" . $new_decimal . "'" . $4 . ($5 ? $5 . $new_vstring : '')
+  }xe
+    or last MAKEFILE_PL;
+
+  $files{$file} = $content;
+}
+
 for my $file (sort keys %files) {
   warn "    updating $file\n";
   open my $fh, '>', $file
