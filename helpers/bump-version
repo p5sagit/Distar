@@ -3,6 +3,111 @@
 use strict;
 use warnings FATAL => 'all';
 use File::Find;
+use Getopt::Long qw(:config gnu_compat);
+use File::Temp ();
+
+GetOptions(
+  "git"     => \my $git,
+) or die("Error in command line arguments\n");
+
+my ($old_version, $bump) = @ARGV;
+my ($new_decimal, $new_vstring) = bump_version($old_version, $bump);
+
+warn "Bumping $old_version -> $new_decimal\n";
+
+my %files;
+if ($git) {
+  if (system "git diff --cached HEAD") {
+    die "Staged changes!\n";
+  }
+  for (`git ls-files`) {
+    chomp;
+    next
+      unless /^lib\/.*\.(?:pod|pm)$/ || /^Makefile\.PL$/;
+    $files{$_} = `git show HEAD:"$_"`;
+  }
+}
+else {
+  find({
+    no_chdir => 1,
+    wanted => sub {
+      next
+        unless -f;
+      next
+        unless /^lib\/.*\.(?:pod|pm)$/ || /^Makefile\.PL$/;
+      open my $fh, '<', $_
+        or die "can't open $_: $!";
+      $files{$_} = do { local $/; <$fh> };
+      close $fh;
+    },
+  }, 'lib');
+}
+
+my $FILE_RE = qr{
+  (^.* \$VERSION \s* = \s* )
+  (['"]?) v?([0-9]+(?:[._][0-9]+)*) \2
+  ( \s*; )
+  (?:
+    (\s*\#\s*)
+    v?[.0-9]+
+  )?
+  (.*)$
+}x;
+my $MAKE_RE = qr{
+  (^.* version \s* => \s* )
+  (['"]?) v?([0-9]+(?:[._][0-9]+)*) \2
+  ( \s*, )
+  (?:
+    (\s*\#\s*)
+    v?[.0-9]+
+  )?
+  (.*)$
+}x;
+
+my $patch = '';
+for my $file (sort keys %files) {
+  my $content = $files{$file};
+  my $file_diff = '';
+  my $re = $file eq 'Makefile.PL' ? $MAKE_RE : $FILE_RE;
+  my @lines = split /\r?\n/, $content;
+  for my $ln (0 .. $#lines) {
+    my $line = $lines[$ln];
+    if ($lines[$ln] =~ $re) {
+      die "unable to bump version number in $file from $old_version, found $3\n"
+        if $3 ne $old_version;
+      my $comment = ($5 ? $5 . $new_vstring : '');
+      my $new_line = "$1'$new_decimal'$4$comment$6";
+      $file_diff .= <<"END_DIFF";
+@@ -@{[ $ln ]},3 +@{[ $ln ]},3 @@
+ $lines[$ln-1]
+-$lines[$ln]
++$new_line
+ $lines[$ln+1]
+END_DIFF
+    }
+  }
+  if ($file_diff) {
+    $patch .= <<"END_HEADER" . $file_diff;
+--- a/$file
++++ b/$file
+END_HEADER
+  }
+}
+
+my ($fh, $file) = File::Temp::tempfile( "bump-version-XXXXXX", TMPDIR => 1 );
+print { $fh } $patch;
+close $fh;
+system qw(git apply --apply --stat), $file
+  and exit 1;
+
+if ($git) {
+  system qw(git apply --cached), $file
+    and exit 1;
+
+  my $message = "Bumping version to $new_decimal";
+  system qw(git commit -m), $message
+    and exit 1;
+}
 
 sub version_parts {
   my $version = shift;
@@ -19,95 +124,33 @@ sub version_parts {
   return @parts;
 }
 
-my $old_version = shift;
+sub bump_version {
+  my ($old_version, $new) = @_;
 
-my %bump_part = (major => 0, minor => 1, bugfix => 2);
-my $bump_this = $bump_part{$ARGV[0]||'bugfix'};
+  my %bump_part = (major => 0, minor => 1, bugfix => 2);
+  my $bump_this = $bump_part{$new||'bugfix'};
 
-my $new_vstring;
-my $new_decimal;
+  my $new_vstring;
+  my $new_decimal;
 
-if (defined $bump_this) {
-  my @new_parts = version_parts($old_version);
-  $new_parts[$bump_this]++;
-  $new_parts[$_] = 0 for ($bump_this+1 .. $#new_parts);
-  $new_vstring = join('.', @new_parts);
-  my $alpha_pos = index($old_version, '_');
-  my $format = '%i.' . ( '%03i' x (@new_parts - 1) );
-  $new_decimal = sprintf($format, @new_parts);
-  substr $new_decimal, $alpha_pos, 0, '_'
-    if $alpha_pos != -1;
-}
-elsif ($ARGV[0] =~ /^v?[0-9]+(?:[._][0-9]+)*$/) {
-  $new_decimal = $ARGV[0];
-  $new_vstring = join('.', version_parts($new_decimal));
-}
-else {
-  die "no idea which part to bump - $ARGV[0] means nothing to me"
-}
-
-warn "Bumping $old_version -> $new_decimal\n";
-
-my %files;
-find({
-  no_chdir => 1,
-  wanted => sub {
-    return
-      unless -f && /\.pod$|\.pm$/;
-    my $file = $_;
-    open my $fh, '<', $file
-      or die "can't open $file: $!";
-    my $content = do { local $/; <$fh> };
-    close $fh;
-
-    $content =~ s{
-      ( \$VERSION \s* = \s* )
-      (['"]?) v?([0-9]+(?:[._][0-9]+)*) \2
-      ( \s*; )
-      (?:
-        (\s*\#\s*)
-        v?[.0-9]+
-      )?
-    }{
-      die "unable to bump version number in $file from $old_version, found $3\n"
-        if $3 ne $old_version;
-      $1 . "'" . $new_decimal . "'" . $4 . ($5 ? $5 . $new_vstring : '')
-    }xe
-      or return;
-
-    $files{$file} = $content;
-  },
-}, 'lib');
-
-MAKEFILE_PL: {
-  my $file = 'Makefile.PL';
-  open my $fh, '<', $file
-    or die "can't open $file: $!";
-  my $content = do { local $/; <$fh> };
-  close $fh;
-
-  $content =~ s{
-    ( version \s* => \s* )
-    (['"]?) v?([0-9]+(?:[._][0-9]+)*) \2
-    ( \s*, )
-    (?:
-      (\s*\#\s*)
-      v?[.0-9]+
-    )?
-  }{
-    die "unable to bump version number in $file from $old_version, found $3\n"
-      if $3 ne $old_version;
-    $1 . "'" . $new_decimal . "'" . $4 . ($5 ? $5 . $new_vstring : '')
-  }xe
-    or last MAKEFILE_PL;
-
-  $files{$file} = $content;
+  if (defined $bump_this) {
+    my @new_parts = version_parts($old_version);
+    $new_parts[$bump_this]++;
+    $new_parts[$_] = 0 for ($bump_this+1 .. $#new_parts);
+    $new_vstring = join('.', @new_parts);
+    my $alpha_pos = index($old_version, '_');
+    my $format = '%i.' . ( '%03i' x (@new_parts - 1) );
+    $new_decimal = sprintf($format, @new_parts);
+    substr $new_decimal, $alpha_pos, 0, '_'
+      if $alpha_pos != -1;
+  }
+  elsif ($new =~ /^v?[0-9]+(?:[._][0-9]+)*$/) {
+    $new_decimal = $new;
+    $new_vstring = join('.', version_parts($new_decimal));
+  }
+  else {
+    die "no idea which part to bump - $new means nothing to me"
+  }
+  return ($new_decimal, $new_vstring);
 }
 
-for my $file (sort keys %files) {
-  warn "    updating $file\n";
-  open my $fh, '>', $file
-    or die "can't open $file: $!";
-  print { $fh } $files{$file};
-  close $fh;
-}
