@@ -156,6 +156,7 @@ sub run_preflight {
       $include = "\n# --- Makefile.include:\n" . do { local $/; <$fh> };
     }
 
+    $dist_test .= "REMAKE = \$(PERLRUN) Makefile.PL @{[ map { $self->quote_literal($_) } @ARGV ]}";
     $dist_test .= <<'END'
 
 # --- Distar section:
@@ -179,6 +180,10 @@ distmanicheck: create_distdir
 nextrelease:
 	$(ABSPERLRUN) Distar/helpers/add-changelog-heading $(VERSION) Changes
 	git add -p Changes
+refresh:
+	cd Distar && git pull
+	rm Makefile
+	$(REMAKE)
 END
 
     for my $type ('', 'minor', 'major') {
