@@ -122,8 +122,8 @@ sub run_preflight {
 
 {
   package Distar::MM;
-  our @ISA = @ExtUtils::MM::ISA;
-  @ExtUtils::MM::ISA = (__PACKAGE__);
+  our @ISA = @MM::ISA;
+  @MM::ISA = (__PACKAGE__);
 
   sub new {
     my ($class, $args) = @_;
