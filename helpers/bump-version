@@ -97,7 +97,7 @@ END_HEADER
 my ($fh, $file) = File::Temp::tempfile( "bump-version-XXXXXX", TMPDIR => 1 );
 print { $fh } $patch;
 close $fh;
-system qw(git apply --apply --stat), $file
+system qw(git --no-pager apply --apply --stat), $file
   and exit 1;
 
 if ($git) {
