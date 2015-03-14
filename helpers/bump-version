@@ -17,7 +17,7 @@ warn "Bumping $old_version -> $new_decimal\n";
 
 my %files;
 if ($git) {
-  if (system "git diff --cached HEAD") {
+  if (system "git diff --quiet --cached HEAD") {
     die "Staged changes!\n";
   }
   for (`git ls-files`) {
