@@ -160,13 +160,19 @@ release: preflight releasetest
 	git tag v$(VERSION) -m "release v$(VERSION)"
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 	git push origin v$(VERSION) HEAD
-distdir: readmefile
+distdir: readmefile licensefile
 readmefile: create_distdir
 	$(NOECHO) $(MAKE) $(DISTVNAME)/README
 $(DISTVNAME)/README: $(VERSION_FROM)
 	$(NOECHO) $(MKPATH) $(DISTVNAME)
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
 	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-to-manifest README
+licensefile: create_distdir
+	$(NOECHO) $(MAKE) $(DISTVNAME)/LICENSE
+$(DISTVNAME)/LICENSE: $(DISTVNAME)/META.json
+	$(NOECHO) $(MKPATH) $(DISTVNAME)
+	$(ABSPERLRUN) Distar/helpers/generate-license $(DISTVNAME)/META.yml >$(DISTVNAME)/LICENSE
+	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-to-manifest LICENSE
 disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"

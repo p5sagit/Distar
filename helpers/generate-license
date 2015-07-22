@@ -1,0 +1,25 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use JSON::PP;
+use Software::LicenseUtils;
+
+my ($meta_file) = @ARGV;
+open my $fh, '<', $meta_file
+  or die "unable to open $meta_file: $!";
+binmode $fh;
+my $meta_content = do { local $/; <$fh> };
+close $fh;
+my $meta = JSON::PP::decode_json($meta_content);
+
+my $authors = join ', ', @{ $meta->{author} };
+
+my %uniq;
+my @licenses =
+  map { $_->new({holder => $authors}) }
+  grep { !$uniq{$_}++ }
+  map { Software::LicenseUtils->guess_license_from_meta_key($_, 2) }
+  @{ $meta->{license} };
+
+print join("\n\n", map { $_->license } @licenses);
