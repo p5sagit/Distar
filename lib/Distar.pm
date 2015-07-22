@@ -205,6 +205,11 @@ END_FRAG
     );
     my $helpers = File::Spec->catdir($distar, 'helpers');
 
+    my $licenses = $self->{LICENSE} || $self->{META_ADD}{license} || $self->{META_MERGE}{license};
+    my $authors = $self->{AUTHOR};
+    $_ = ref $_ ? $_ : [$_ || ()]
+      for $licenses, $authors;
+
     my %vars = (
       DISTAR => $self->quote_literal($distar),
       HELPERS => $self->quote_literal($helpers),
@@ -213,6 +218,8 @@ END_FRAG
       CHANGELOG => $self->{CHANGELOG} ||= 'Changes',
       DEV_NULL_STDOUT => ($self->{DEV_NULL} ? '>'.File::Spec->devnull : ''),
       DISTTEST_MAKEFILE_PARAMS => '',
+      AUTHORS => $self->quote_literal(join(', ', @$authors)),
+      LICENSES => join(' ', map $self->quote_literal($_), @$licenses),
     );
 
     my $dist_test = $self->SUPER::dist_test(@_);
@@ -246,14 +253,21 @@ pushrelease ::
 pushrelease$(FAKE_RELEASE) ::
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 	git push origin v$(VERSION) HEAD
-distdir: readmefile
+distdir: readmefile licensefile
 readmefile: create_distdir
 	$(NOECHO) $(TEST_F) $(DISTVNAME)/README || $(MAKE) $(DISTVNAME)/README
 $(DISTVNAME)/README: $(VERSION_FROM)
 	$(NOECHO) $(MKPATH) $(DISTVNAME)
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
 	$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) README
-distsignature: readmefile
+distsignature: readmefile licensefile
+licensefile: create_distdir
+	$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE || $(MAKE) $(DISTVNAME)/LICENSE
+$(DISTVNAME)/LICENSE: Makefile.PL
+	$(NOECHO) $(MKPATH) $(DISTVNAME)
+	$(ABSPERLRUN) $(HELPERS)/generate-license $(AUTHORS) $(LICENSES) >$(DISTVNAME)/LICENSE
+	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-to-manifest LICENSE
+	$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) LICENSE
 disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"

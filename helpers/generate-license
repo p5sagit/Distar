@@ -1,0 +1,15 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use Software::LicenseUtils;
+
+my ($authors, @licenses) = @ARGV;
+
+my %uniq;
+print
+  join "\n\n",
+  map { $_->new({holder => $authors})->license }
+  grep { !$uniq{$_}++ }
+  map { Software::LicenseUtils->guess_license_from_meta_key($_, 2) }
+  @licenses;
