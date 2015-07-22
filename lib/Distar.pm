@@ -15,7 +15,7 @@ $VERSION = eval $VERSION;
 my $MM_VER = eval $ExtUtils::MakeMaker::VERSION;
 
 our @EXPORT = qw(
-  author manifest_include readme_generator run_preflight
+  author manifest_include readme_generator
 );
 
 sub import {
@@ -74,52 +74,6 @@ sub write_manifest_skip {
   close $skip;
 }
 
-sub run_preflight {
-  my $version = $ARGV[0];
-
-  my $make = $Config{make};
-  my $null = File::Spec->devnull;
-
-  system("git fetch");
-  if (system("git rev-parse --quiet --verify v$version >$null") == 0) {
-    die "Tag v$version already exists!";
-  }
-
-  require File::Find;
-  File::Find::find({ no_chdir => 1, wanted => sub {
-    return
-      unless -f && /\.pm$/;
-    my $file_version = MM->parse_version($_);
-    die "Module $_ version $file_version doesn't match dist version $version"
-      unless $file_version eq 'undef' || $file_version eq $version;
-  }}, 'lib');
-
-  for (scalar `"$make" manifest 2>&1 >$null`) {
-    $_ && die "$make manifest changed:\n$_ Go check it and retry";
-  }
-
-  for (scalar `git status`) {
-    /^(?:# )?On branch master/ || die "Not on master. EEEK";
-    /Your branch is behind|Your branch and .*? have diverged/ && die "Not synced with upstream";
-  }
-
-  for (scalar `git diff`) {
-    length && die "Outstanding changes";
-  }
-  my $ymd = sprintf(
-    "%i-%02i-%02i", (gmtime)[5]+1900, (gmtime)[4]+1, (gmtime)[3]
-  );
-  my $changes_line = "$version - $ymd\n";
-  my @cached = grep /^\+/, `git diff --cached -U0`;
-  @cached > 0 or die "Please add:\n\n$changes_line\nto Changes stage Changes (git add Changes)";
-  @cached == 2 or die "Pre-commit Changes not just Changes line";
-  $cached[0] =~ /^\+\+\+ .\/Changes\n/ or die "Changes not changed";
-  $cached[1] eq "+$changes_line" or die "Changes new line should be: \n\n$changes_line ";
-
-  { no warnings 'exec'; `cpan-upload -h`; }
-  $? and die "cpan-upload not available";
-}
-
 {
   package Distar::MM;
   our @ISA = @MM::ISA;
@@ -161,7 +115,7 @@ sub run_preflight {
 
 # --- Distar section:
 preflight:
-	perl -IDistar/lib -MDistar -erun_preflight $(VERSION)
+	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION)
 release: preflight
 	$(MAKE) disttest
 	rm -rf $(DISTVNAME)
