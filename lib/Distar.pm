@@ -9,7 +9,7 @@ use ExtUtils::MM ();
 use Config;
 use File::Spec;
 
-our $VERSION = '0.001000';
+our $VERSION = '0.002000';
 $VERSION = eval $VERSION;
 
 my $MM_VER = eval $ExtUtils::MakeMaker::VERSION;
@@ -46,12 +46,8 @@ sub manifest_include {
   push @Manifest, @_;
 }
 
-my $readme_generator = <<'README';
-	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
-	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-to-manifest README
-README
 sub readme_generator {
-    $readme_generator = shift;
+  die "readme_generator unsupported" if @_ && $_[0];
 }
 
 sub write_manifest_skip {
@@ -124,9 +120,11 @@ release: preflight
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 	git push origin v$(VERSION) HEAD
 distdir: readmefile
-readmefile: create_distdir
-END
-    . $readme_generator . <<'END';
+readmefile: create_distdir $(DISTVNAME)/README
+	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-to-manifest README
+$(DISTVNAME)/README: $(VERSION_FROM)
+	$(NOECHO) $(MKPATH) $(DISTVNAME)
+	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
 disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"
