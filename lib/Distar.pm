@@ -48,7 +48,7 @@ sub manifest_include {
 
 my $readme_generator = <<'README';
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
-	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-readme-to-manifest
+	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-to-manifest README
 README
 sub readme_generator {
     $readme_generator = shift;

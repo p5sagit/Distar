@@ -1,9 +1,0 @@
-#!/usr/bin/env perl
-
-use strict;
-use warnings FATAL => 'all';
-
-use ExtUtils::Manifest 'maniadd';
-
-eval { maniadd({ README => "README file (added by Distar)"}) }
-  or print "Could not add README to MANIFEST: $@\n";

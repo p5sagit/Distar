@@ -1,0 +1,10 @@
+#!/usr/bin/env perl
+use strict;
+use warnings FATAL => 'all';
+
+use ExtUtils::Manifest 'maniadd';
+
+for my $file (@ARGV) {
+  eval { maniadd({ $file => "$file file (added by Distar)"}) }
+    or print "Could not add $file to MANIFEST: $@\n";
+}
