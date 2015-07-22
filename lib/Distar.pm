@@ -38,7 +38,7 @@ our @Manifest = (
   'xt' => '.t',
   'xt/lib' => '.pm',
   '' => qr{[^/]*\.PL},
-  '' => qr{Changes|MANIFEST|README|META\.yml},
+  '' => qr{Changes|MANIFEST|README|LICENSE|META\.yml},
   'maint' => qr{[^.].*},
 );
 
