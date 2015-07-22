@@ -105,20 +105,19 @@ sub write_manifest_skip {
     my $self = shift;
     my $dist_test = $self->SUPER::dist_test(@_);
 
-    my $include = '';
-    if (open my $fh, '<', 'maint/Makefile.include') {
-      $include = "\n# --- Makefile.include:\n" . do { local $/; <$fh> };
-    }
-
-    $dist_test .= "REMAKE = \$(PERLRUN) Makefile.PL @{[ map { $self->quote_literal($_) } @ARGV ]}";
-    $dist_test .= <<'END'
+    $dist_test .= <<"END";
 
 # --- Distar section:
+
+REMAKE = \$(PERLRUN) Makefile.PL @{[ map { $self->quote_literal($_) } @ARGV ]}
+
+END
+    $dist_test .= <<'END';
 preflight:
 	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION)
 release: preflight
 	$(MAKE) disttest
-	rm -rf $(DISTVNAME)
+	$(RM_RF) $(DISTVNAME)
 	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
 	git commit -a -m "Release commit for $(VERSION)"
 	git tag v$(VERSION) -m "release v$(VERSION)"
@@ -140,13 +139,18 @@ refresh:
 	$(REMAKE)
 END
 
+    my $include = '';
+    if (open my $fh, '<', 'maint/Makefile.include') {
+      $include = "\n# --- Makefile.include:\n" . do { local $/; <$fh> };
+    }
+
     for my $type ('', 'minor', 'major') {
       if ($include !~ /^bump$type:/m) {
         my $arg = $type || '$(V)';
         $dist_test .= <<"END"
 bump$type:
-	Distar/helpers/bump-version --git \$(VERSION) $arg
-	rm Makefile
+	\$(ABSPERLRUN) Distar/helpers/bump-version --git \$(VERSION) $arg
+	\$(RM_F) \$(FIRST_MAKEFILE)
 	\$(REMAKE)
 END
       }
