@@ -116,6 +116,7 @@ sub version_parts {
   if (!$dotted && @parts == 2) {
     my $dec = pop @parts;
     $dec =~ s/_//g;
+    $dec .= "0" x ((- length $dec) % 3);
     push @parts, $dec =~ /(\d{1,3})/g;
   }
   $_ += 0 for @parts;
