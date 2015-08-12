@@ -120,30 +120,43 @@ sub version_parts {
     push @parts, $dec =~ /(\d{1,3})/g;
   }
   $_ += 0 for @parts;
-  push @parts, 0
-    until @parts >= 3;
   return @parts;
 }
 
 sub bump_version {
-  my ($old_version, $new) = @_;
+  my ($version, $new) = @_;
 
-  my %bump_part = (major => 0, minor => 1, bugfix => 2);
-  my $bump_this = $bump_part{$new||'bugfix'};
+  my %bump_part = (major => 0, minor => 1, bugfix => 2, last => -1);
+  my $bump_this = $bump_part{$new||'last'};
 
   my $new_vstring;
   my $new_decimal;
 
   if (defined $bump_this) {
-    my @new_parts = version_parts($old_version);
-    $new_parts[$bump_this]++;
-    $new_parts[$_] = 0 for ($bump_this+1 .. $#new_parts);
-    $new_vstring = join('.', @new_parts);
-    my $alpha_pos = index($old_version, '_');
-    my $format = '%i.' . ( '%03i' x (@new_parts - 1) );
-    $new_decimal = sprintf($format, @new_parts);
-    substr $new_decimal, $alpha_pos, 0, '_'
-      if $alpha_pos != -1;
+    if ($version =~ /^v/ || ($version =~ tr/.//) > 1) {
+      my @parts = version_parts($version);
+      $parts[$bump_this]++;
+      $parts[$_] = 0 for (($bump_this < 0 ? @parts : 0)+$bump_this+1 .. $#parts);
+      $_ += 0
+        for @parts;
+      $new_vstring = join '.', @parts;
+      my $format = '%i.'. join '', map { '%03i' } @parts[1 .. $#parts];
+      $new_decimal = sprintf $format, @parts;
+    }
+    else {
+      my $alpha_pos = index($version, '_');
+      $version =~ s/_//g;
+      $version =~ s/^(\d+)\.//;
+      my @parts = $1;
+      push @parts, $version =~ /(\d{1,3})/g;
+      my $format = '%i.'.join '', map { '%0'.length($_).'i' } @parts[1 .. $#parts];
+      $parts[$bump_this]++;
+      $parts[$_] = 0 for (($bump_this < 0 ? @parts : 0)+$bump_this+1 .. $#parts);
+      $new_decimal = sprintf $format, @parts;
+      substr $new_decimal, $alpha_pos, 0, '_'
+        if $alpha_pos != -1;
+      $new_vstring = join '.', version_parts($new_decimal);
+    }
   }
   elsif ($new =~ /^v?[0-9]+(?:[._][0-9]+)*$/) {
     $new_decimal = $new;
