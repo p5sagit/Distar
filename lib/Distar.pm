@@ -48,6 +48,7 @@ sub readme_generator {
 }
 
 sub write_manifest_skip {
+  my ($mm) = @_;
   my @files = @Manifest;
   my @parts;
   while (my ($dir, $spec) = splice(@files, 0, 2)) {
@@ -60,7 +61,9 @@ sub write_manifest_skip {
           : die "spec must be string or regexp, was: ${spec} (${\ref $spec})");
     push @parts, $re;
   }
-  my $final = '^(?!'.join('|', map "${_}\$", @parts).')';
+  my $dist_name = $mm->{DISTNAME};
+  my $include = join '|', map "${_}\$", @parts;
+  my $final = "^(?:\Q$dist_name\E-v?[0-9_.]+/|(?!$include))";
   open my $skip, '>', 'MANIFEST.SKIP'
     or die "can't open MANIFEST.SKIP: $!";
   print $skip "${final}\n";
@@ -90,7 +93,7 @@ sub write_manifest_skip {
 
   sub flush {
     my $self = shift;
-    Distar::write_manifest_skip();
+    Distar::write_manifest_skip($self);
     $self->SUPER::flush(@_);
   }
 
