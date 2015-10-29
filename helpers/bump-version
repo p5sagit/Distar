@@ -8,6 +8,7 @@ use File::Temp ();
 
 GetOptions(
   "git"     => \my $git,
+  "force"   => \my $force,
 ) or die("Error in command line arguments\n");
 
 my ($old_version, $bump) = @ARGV;
@@ -81,7 +82,7 @@ for my $file (sort keys %files) {
     my $line = $lines[$ln];
     if ($lines[$ln] =~ $re) {
       die "unable to bump version number in $file from $old_version, found $3\n"
-        if $3 ne $old_version;
+        if !$force && $3 ne $old_version;
       my $comment = ($5 ? $5 . $new_vstring : '');
       my $new_line = "$1'$new_decimal'$4$comment$6";
       $file_diff .= <<"END_DIFF";
