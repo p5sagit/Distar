@@ -15,6 +15,13 @@ my ($new_decimal, $new_vstring) = bump_version($old_version, $bump);
 
 warn "Bumping $old_version -> $new_decimal\n";
 
+my $file_match = qr{^(?:
+  Makefile\.PL
+  |lib[/\\].*\.(?:pod|pm)
+  |bin[/\\].*
+  |script[/\\].*
+)$}x;
+
 my %files;
 if ($git) {
   if (system "git diff --quiet --cached HEAD") {
@@ -23,7 +30,7 @@ if ($git) {
   for (`git ls-files`) {
     chomp;
     next
-      unless /^lib\/.*\.(?:pod|pm)$/ || /^Makefile\.PL$/;
+      unless /$file_match/;
     $files{$_} = `git show HEAD:"$_"`;
   }
 }
@@ -34,13 +41,13 @@ else {
       next
         unless -f;
       next
-        unless /^lib\/.*\.(?:pod|pm)$/ || /^Makefile\.PL$/;
+        unless /(?:\.[\/\\])?$file_match/;
       open my $fh, '<', $_
         or die "can't open $_: $!";
       $files{$_} = do { local $/; <$fh> };
       close $fh;
     },
-  }, 'lib');
+  }, '.');
 }
 
 my $FILE_RE = qr{
