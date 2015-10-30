@@ -111,8 +111,9 @@ END
     $dist_test .= <<'END';
 preflight:
 	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION)
-release: preflight
-	$(MAKE) disttest
+releasetest:
+	$(MAKE) disttest RELEASE_TESTING=1 TEST_FILES="$(TEST_FILES)"
+release: preflight releasetest
 	$(RM_RF) $(DISTVNAME)
 	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
 	git commit -a -m "Release commit for $(VERSION)"
