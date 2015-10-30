@@ -97,6 +97,13 @@ sub write_manifest_skip {
     $self->SUPER::flush(@_);
   }
 
+  sub special_targets {
+    my $self = shift;
+    my $targets = $self->SUPER::special_targets(@_);
+    $targets =~ s/^(\.PHONY\s*:.*)/$1 preflight releasetest release readmefile distmanicheck nextrelease refresh/m;
+    $targets;
+  }
+
   sub dist_test {
     my $self = shift;
     my $dist_test = $self->SUPER::dist_test(@_);
