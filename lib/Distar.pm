@@ -100,7 +100,7 @@ sub write_manifest_skip {
   sub special_targets {
     my $self = shift;
     my $targets = $self->SUPER::special_targets(@_);
-    $targets =~ s/^(\.PHONY\s*:.*)/$1 preflight releasetest release readmefile distmanicheck nextrelease refresh/m;
+    $targets =~ s/^(\.PHONY\s*:.*)/$1 preflight releasetest release readmefile distmanicheck nextrelease refresh bump bumpmajor bumpminor/m;
     $targets;
   }
 
