@@ -1,23 +1,33 @@
 #!/usr/bin/env perl
 use strict;
 use warnings FATAL => 'all';
+use Getopt::Long qw(:config gnu_getopt);
+GetOptions(
+  "git"     => \my $git,
+) or die("Error in command line arguments\n");
 
 my $version = shift;
 my @ymd = (gmtime)[5,4,3];
 $ymd[0] += 1900;
 $ymd[1] += 1;
-my $changes_line = sprintf "%s - %i-%02i-%02i\n", $version, @ymd;
+my $changes_line = sprintf "%s - %i-%02i-%02i", $version, @ymd;
 
 foreach my $changes (@ARGV) {
     print "Adding $version heading to $changes.\n";
-    open my $fh, '+<', $changes
+    open my $fh, '+<:raw', $changes
       or die "Can't open $changes: $!";
+
     my $content = '';
-    my $done;
-    local $/ = $/;
+    my $context;
+
     while (<$fh>) {
-        if ($done) {
-            undef $/;
+        if (defined $context) {
+            if (/^\S/) {
+                local $/;
+                $content .= $_ . <$fh>;
+                last;
+            }
+            $context++;
         }
         elsif (/^v?(\d+(?:\.\d+)*)(\s+|$)/) {
             if ($1 eq $version) {
@@ -29,7 +39,8 @@ foreach my $changes (@ARGV) {
         }
         elsif (/^\s+[-*+#]/) {
             $content .= $changes_line;
-            $done = 1;
+            $content .= (/(\r?\n)/ || $content =~ /(\r?\n)/) ? $1 : "\n";
+            $context = 1;
         }
         $content .= $_;
     }
@@ -38,4 +49,9 @@ foreach my $changes (@ARGV) {
     truncate $fh, 0;
     print { $fh } $content;
     close $fh;
+
+    if ($git) {
+        local $ENV{GIT_DIFF_OPTS} = "-u$context";
+        system qw(git add -p), $changes;
+    }
 }

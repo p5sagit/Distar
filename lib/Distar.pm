@@ -158,8 +158,7 @@ disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"
 nextrelease:
-	$(ABSPERLRUN) Distar/helpers/add-changelog-heading $(VERSION) Changes
-	GIT_DIFF_OPTS=-u`$(ABSPERLRUN) Distar/helpers/changelog-context $(VERSION) Changes` git add -p Changes
+	$(ABSPERLRUN) Distar/helpers/add-changelog-heading --git $(VERSION) Changes
 refresh:
 	cd Distar && git pull
 	$(RM_F) $(FIRST_MAKEFILE)
