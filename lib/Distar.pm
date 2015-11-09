@@ -130,7 +130,7 @@ END
 preflight:
 	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION)
 releasetest:
-	$(MAKE) disttest RELEASE_TESTING=1 TEST_FILES="$(TEST_FILES)"
+	$(MAKE) disttest RELEASE_TESTING=1 PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
 release: preflight releasetest
 	$(RM_RF) $(DISTVNAME)
 	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
