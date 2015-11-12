@@ -1,0 +1,39 @@
+#!/usr/bin/env perl
+use strict;
+use warnings FATAL => 'all';
+use Getopt::Long qw(:config gnu_getopt);
+GetOptions(
+  "p|prefix=s@" => \(my $prefix = []),
+  "s|suffix=s@" => \(my $suffix = []),
+) or die "Error in command line arguments\n";
+
+my $version = shift or die "no version specified!\n";
+my $changelog = @ARGV ? shift : 'Changes';
+
+$version =~ s/\Av//;
+
+open my $fh, '<:raw', $changelog
+  or die "can't open $changelog: $!\n";
+my $version_log = '';
+my $found_version;
+while (my $line = <$fh>) {
+  if ($found_version) {
+    last
+      if $line =~ /^\S/;
+    $version_log .= $line;
+  }
+  elsif ($line =~ /^v?\Q$version\E/) {
+    $found_version = 1;
+  }
+}
+close $fh;
+die "couldn't find heading for $version in $changelog!\n"
+  unless $found_version;
+
+$version_log =~ s/\r\n?/\n/g;
+$version_log =~ s/\n+\z//;
+
+s/\n\z//
+  for @$prefix, @$suffix;
+
+print join("\n\n", @$prefix, $version_log, @$suffix) . "\n";

@@ -222,6 +222,7 @@ END_FRAG
       DISTTEST_MAKEFILE_PARAMS => '',
       AUTHORS => $self->quote_literal(join(', ', @$authors)),
       LICENSES => join(' ', map $self->quote_literal($_), @$licenses),
+      GET_CHANGELOG => '$(ABSPERLRUN) $(HELPERS)/get-changelog $(VERSION) $(CHANGELOG)',
     );
 
     my $dist_test = $self->SUPER::dist_test(@_);
@@ -245,8 +246,8 @@ releasetest:
 	$(MAKE) disttest RELEASE_TESTING=1 DISTTEST_MAKEFILE_PARAMS="PREREQ_FATAL=1" PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
 release: preflight
 	$(MAKE) releasetest
-	git commit -a -m "Release commit for $(VERSION)"
-	git tag v$(VERSION) -m "release v$(VERSION)"
+	$(GET_CHANGELOG) -p"Release commit for $(VERSION)" | git commit -a -F -
+	$(GET_CHANGELOG) -p"release v$(VERSION)" | git tag -a -F - "v$(VERSION)"
 	$(RM_RF) $(DISTVNAME)
 	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
 	$(NOECHO) $(MAKE) pushrelease FAKE_RELEASE=$(FAKE_RELEASE)
