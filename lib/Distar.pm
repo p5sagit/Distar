@@ -135,6 +135,7 @@ sub write_manifest_skip {
       BRANCH => $self->{BRANCH} ||= 'master',
       CHANGELOG => $self->{CHANGELOG} ||= 'Changes',
       DEV_NULL_STDOUT => ($self->{DEV_NULL} ? '>'.File::Spec->devnull : ''),
+      FAKE_RELEASE => '',
     );
 
     join('',
@@ -158,6 +159,10 @@ release: preflight releasetest
 	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
 	git commit -a -m "Release commit for $(VERSION)"
 	git tag v$(VERSION) -m "release v$(VERSION)"
+	$(NOECHO) $(MAKE) pushrelease FAKE_RELEASE=$(FAKE_RELEASE)
+pushrelease ::
+	$(NOECHO) $(NOOP)
+pushrelease$(FAKE_RELEASE) ::
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 	git push origin v$(VERSION) HEAD
 distdir: readmefile
@@ -292,6 +297,11 @@ C<preflight> and C<releasetest> commands.
 
 Releasing will generate a dist tarball and upload it to CPAN using cpan-upload.
 It will also create a git tag for the release, and push the tag and branch.
+
+=head2 FAKE_RELEASE
+
+If release is run with FAKE_RELEASE=1 set, it will skip uploading to CPAN and
+pushing to git.  A release commit will still be created and tagged locally.
 
 =head2 preflight
 
