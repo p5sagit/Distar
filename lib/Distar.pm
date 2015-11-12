@@ -151,11 +151,12 @@ release: preflight releasetest
 	cpan-upload $(DISTVNAME).tar$(SUFFIX)
 	git push origin v$(VERSION) HEAD
 distdir: readmefile
-readmefile: create_distdir $(DISTVNAME)/README
-	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-to-manifest README
+readmefile: create_distdir
+	$(NOECHO) $(MAKE) $(DISTVNAME)/README
 $(DISTVNAME)/README: $(VERSION_FROM)
 	$(NOECHO) $(MKPATH) $(DISTVNAME)
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
+	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-to-manifest README
 disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"
