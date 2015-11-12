@@ -117,16 +117,26 @@ sub write_manifest_skip {
 
   sub dist_test {
     my $self = shift;
-    my $dist_test = $self->SUPER::dist_test(@_);
 
-    $dist_test .= <<"END";
+    my $include = '';
+    if (open my $fh, '<', 'maint/Makefile.include') {
+      $include = "\n# --- Makefile.include:\n\n" . do { local $/; <$fh> };
+      $include =~ s/\n?\z/\n/;
+    }
 
-# --- Distar section:
+    my @bump_targets =
+      grep { $include !~ /^bump$_(?: +\w+)*:/m } ('', 'minor', 'major');
 
-REMAKE = \$(PERLRUN) Makefile.PL @{[ map { $self->quote_literal($_) } @ARGV ]}
+    my %vars = (
+      REMAKE => join(' ', '$(PERLRUN)', 'Makefile.PL', map { $self->quote_literal($_) } @ARGV),
+    );
 
-END
-    $dist_test .= <<'END';
+    join('',
+      $self->SUPER::dist_test(@_),
+      "\n\n# --- Distar section:\n\n",
+      (map "$_ = $vars{$_}\n", sort keys %vars),
+      <<'END',
+
 preflight:
 	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION)
 releasetest:
@@ -155,27 +165,15 @@ refresh:
 	$(RM_F) $(FIRST_MAKEFILE)
 	$(REMAKE)
 END
-
-    my $include = '';
-    if (open my $fh, '<', 'maint/Makefile.include') {
-      $include = "\n# --- Makefile.include:\n" . do { local $/; <$fh> };
-    }
-
-    for my $type ('', 'minor', 'major') {
-      if ($include !~ /^bump$type:/m) {
-        my $arg = $type || '$(V)';
-        $dist_test .= <<"END"
-bump$type:
-	\$(ABSPERLRUN) Distar/helpers/bump-version --git \$(VERSION) $arg
-	\$(RM_F) \$(FIRST_MAKEFILE)
-	\$(REMAKE)
+      map(sprintf(<<'END', "bump$_", ($_ || '$(V)')), @bump_targets),
+%s:
+	$(ABSPERLRUN) Distar/helpers/bump-version --git $(VERSION) %s
+	$(RM_F) $(FIRST_MAKEFILE)
+	$(REMAKE)
 END
-      }
-    }
-
-    $dist_test .= $include . "\n";
-
-    return $dist_test;
+      $include,
+      "\n",
+    );
   }
 }
 
