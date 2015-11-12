@@ -129,6 +129,7 @@ sub write_manifest_skip {
 
     my %vars = (
       REMAKE => join(' ', '$(PERLRUN)', 'Makefile.PL', map { $self->quote_literal($_) } @ARGV),
+      BRANCH => $self->{BRANCH} ||= 'master',
     );
 
     join('',
@@ -138,7 +139,7 @@ sub write_manifest_skip {
       <<'END',
 
 preflight:
-	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION)
+	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION) --branch=$(BRANCH)
 releasetest:
 	$(MAKE) disttest RELEASE_TESTING=1 PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
 release: preflight releasetest
