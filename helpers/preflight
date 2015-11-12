@@ -9,6 +9,7 @@ use Getopt::Long qw(:config gnu_getopt);
 
 GetOptions(
   "branch=s"     => \(my $branch = 'master'),
+  "changelog=s"  => \(my $changelog = 'Changes'),
 ) or die("Error in command line arguments\n");
 
 my $version = shift or die "version required!";
@@ -46,10 +47,10 @@ my $ymd = sprintf(
 );
 my $changes_line = "$version - $ymd\n";
 my @cached = grep /^\+/, `git diff --cached -U0`;
-@cached > 0 or die "Please add:\n\n$changes_line\nto Changes stage Changes (git add Changes)";
-@cached == 2 or die "Pre-commit Changes not just Changes line";
-$cached[0] =~ /^\+\+\+ .\/Changes\n/ or die "Changes not changed";
-$cached[1] eq "+$changes_line" or die "Changes new line should be: \n\n$changes_line ";
+@cached > 0 or die "Please add:\n\n$changes_line\nto $changelog and stage $changelog (git add $changelog)";
+@cached == 2 or die "All '$changelog' changes must be committed aside from version heading";
+$cached[0] =~ /^\+\+\+ .\/\Q$changelog\E\n/ or die "$changelog not changed";
+$cached[1] eq "+$changes_line" or die "$changelog new line should be: \n\n$changes_line ";
 
 { no warnings 'exec'; `cpan-upload -h`; }
 $? and die "cpan-upload not available";

@@ -130,6 +130,7 @@ sub write_manifest_skip {
     my %vars = (
       REMAKE => join(' ', '$(PERLRUN)', 'Makefile.PL', map { $self->quote_literal($_) } @ARGV),
       BRANCH => $self->{BRANCH} ||= 'master',
+      CHANGELOG => $self->{CHANGELOG} ||= 'Changes',
     );
 
     join('',
@@ -139,7 +140,7 @@ sub write_manifest_skip {
       <<'END',
 
 preflight:
-	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION) --branch=$(BRANCH)
+	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION) --changelog=$(CHANGELOG) --branch=$(BRANCH)
 releasetest:
 	$(MAKE) disttest RELEASE_TESTING=1 PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
 release: preflight releasetest
@@ -159,7 +160,7 @@ disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"
 nextrelease:
-	$(ABSPERLRUN) Distar/helpers/add-changelog-heading --git $(VERSION) Changes
+	$(ABSPERLRUN) Distar/helpers/add-changelog-heading --git $(VERSION) $(CHANGELOG)
 refresh:
 	cd Distar && git pull
 	$(RM_F) $(FIRST_MAKEFILE)
