@@ -152,7 +152,7 @@ nextrelease:
 	GIT_DIFF_OPTS=-u`$(ABSPERLRUN) Distar/helpers/changelog-context $(VERSION) Changes` git add -p Changes
 refresh:
 	cd Distar && git pull
-	rm Makefile
+	$(RM_F) $(FIRST_MAKEFILE)
 	$(REMAKE)
 END
 
