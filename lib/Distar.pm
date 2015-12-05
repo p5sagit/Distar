@@ -101,6 +101,7 @@ sub write_manifest_skip {
     my $targets = $self->SUPER::special_targets(@_);
     my $phony_targets = join ' ', qw(
       preflight
+      check-version
       releasetest
       release
       readmefile
@@ -139,8 +140,10 @@ sub write_manifest_skip {
       (map "$_ = $vars{$_}\n", sort keys %vars),
       <<'END',
 
-preflight:
+preflight: check-version
 	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION) --changelog=$(CHANGELOG) --branch=$(BRANCH)
+check-version:
+	$(ABSPERLRUN) Distar/helpers/check-version $(VERSION) $(TO_INST_PM) $(EXE_FILES)
 releasetest:
 	$(MAKE) disttest RELEASE_TESTING=1 PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
 release: preflight releasetest

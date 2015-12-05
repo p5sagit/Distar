@@ -4,7 +4,6 @@ use warnings FATAL => 'all';
 use Config;
 use File::Spec;
 use File::Find;
-use ExtUtils::MakeMaker ();
 use Getopt::Long qw(:config gnu_getopt);
 
 GetOptions(
@@ -21,14 +20,6 @@ system("git fetch");
 if (system("git rev-parse --quiet --verify v$version >$null") == 0) {
   die "Tag v$version already exists!";
 }
-
-File::Find::find({ no_chdir => 1, wanted => sub {
-  return
-    unless -f && /\.pm$/;
-  my $file_version = MM->parse_version($_);
-  die "Module $_ version $file_version doesn't match dist version $version"
-    unless $file_version eq 'undef' || $file_version eq $version;
-}}, 'lib');
 
 for (scalar `"$make" manifest 2>&1 >$null`) {
   $_ && die "$make manifest changed:\n$_ Go check it and retry";

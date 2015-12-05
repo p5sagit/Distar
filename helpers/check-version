@@ -1,0 +1,16 @@
+#!/usr/bin/env perl
+use strict;
+use warnings FATAL => 'all';
+use ExtUtils::MakeMaker ();
+
+my $version = shift
+  or die "version required!";
+
+my $bad = join '',
+  map {
+    my $file_version = MM->parse_version($_);
+    ($file_version eq 'undef' || $file_version eq $version) ? ''
+      : "Module $_ version $file_version doesn't match dist version $version!\n";
+  } @ARGV;
+
+die $bad if $bad;
