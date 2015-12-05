@@ -38,6 +38,3 @@ my @cached = grep /^\+/, `git diff --cached -U0`;
 @cached == 2 or die "All '$changelog' changes must be committed aside from version heading";
 $cached[0] =~ /^\+\+\+ .\/\Q$changelog\E\n/ or die "$changelog not changed";
 $cached[1] eq "+$changes_line" or die "$changelog new line should be: \n\n$changes_line ";
-
-{ no warnings 'exec'; `cpan-upload -h`; }
-$? and die "cpan-upload not available";

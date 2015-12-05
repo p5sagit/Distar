@@ -103,6 +103,7 @@ sub write_manifest_skip {
       preflight
       check-version
       check-manifest
+      check-cpan-upload
       releasetest
       release
       readmefile
@@ -133,6 +134,7 @@ sub write_manifest_skip {
       REMAKE => join(' ', '$(PERLRUN)', 'Makefile.PL', map { $self->quote_literal($_) } @ARGV),
       BRANCH => $self->{BRANCH} ||= 'master',
       CHANGELOG => $self->{CHANGELOG} ||= 'Changes',
+      DEV_NULL_STDOUT => ($self->{DEV_NULL} ? '>'.File::Spec->devnull : ''),
     );
 
     join('',
@@ -141,12 +143,14 @@ sub write_manifest_skip {
       (map "$_ = $vars{$_}\n", sort keys %vars),
       <<'END',
 
-preflight: check-version check-manifest
+preflight: check-version check-manifest check-cpan-upload
 	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION) --changelog=$(CHANGELOG) --branch=$(BRANCH)
 check-version:
 	$(ABSPERLRUN) Distar/helpers/check-version $(VERSION) $(TO_INST_PM) $(EXE_FILES)
 check-manifest:
 	$(ABSPERLRUN) Distar/helpers/check-manifest
+check-cpan-upload:
+	$(NOECHO) cpan-upload -h $(DEV_NULL_STDOUT)
 releasetest:
 	$(MAKE) disttest RELEASE_TESTING=1 PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
 release: preflight releasetest
