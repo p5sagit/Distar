@@ -21,20 +21,25 @@ if (system("git rev-parse --quiet --verify v$version >$null") == 0) {
   die "Tag v$version already exists!";
 }
 
-for (scalar `git status`) {
-  /^(?:# )?On branch \Q$branch\E/ || die "Not on $branch. EEEK";
-  /Your branch is behind|Your branch and .*? have diverged/ && die "Not synced with upstream";
-}
+chomp(my $head = `git symbolic-ref -q HEAD`);
+(my $current_branch = $head) =~ s{^refs/heads/}{};
+$head eq "refs/heads/$branch"
+  or die "Current branch is $current_branch, not $branch. EEEK!\n";
+chomp(my $upstream = `git for-each-ref --format="%(upstream)" $head`);
+length $upstream
+  or die "No upstream branch configured for $branch!\n";
+system qw(git merge-base --is-ancestor), $upstream, $head
+  and die "Not synced with upstream!\n";
 
 for (scalar `git diff`) {
-  length && die "Outstanding changes";
+  length && die "Outstanding changes!\n";
 }
 my $ymd = sprintf(
   "%i-%02i-%02i", (gmtime)[5]+1900, (gmtime)[4]+1, (gmtime)[3]
 );
 my $changes_line = "$version - $ymd\n";
-my @cached = grep /^\+/, `git diff --cached -U0`;
-@cached > 0 or die "Please add:\n\n$changes_line\nto $changelog and stage $changelog (git add $changelog)";
-@cached == 2 or die "All '$changelog' changes must be committed aside from version heading";
-$cached[0] =~ /^\+\+\+ .\/\Q$changelog\E\n/ or die "$changelog not changed";
-$cached[1] eq "+$changes_line" or die "$changelog new line should be: \n\n$changes_line ";
+my @cached = grep /^\+/, `git diff --cached -U0 --no-prefix`;
+@cached > 0 or die "Please add:\n\n$changes_line\nto $changelog and stage $changelog (git add $changelog)\n";
+@cached == 2 or die "All '$changelog' changes must be committed aside from version heading\n";
+$cached[0] =~ /^\+\+\+ \Q$changelog\E\n/ or die "$changelog not changed\n";
+$cached[1] eq "+$changes_line" or die "$changelog new line should be: \n\n$changes_line\n";
