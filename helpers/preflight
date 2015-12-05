@@ -21,10 +21,6 @@ if (system("git rev-parse --quiet --verify v$version >$null") == 0) {
   die "Tag v$version already exists!";
 }
 
-for (scalar `"$make" manifest 2>&1 >$null`) {
-  $_ && die "$make manifest changed:\n$_ Go check it and retry";
-}
-
 for (scalar `git status`) {
   /^(?:# )?On branch \Q$branch\E/ || die "Not on $branch. EEEK";
   /Your branch is behind|Your branch and .*? have diverged/ && die "Not synced with upstream";

@@ -1,0 +1,30 @@
+#!/usr/bin/env perl
+use strict;
+use warnings FATAL => 'all';
+use ExtUtils::Manifest qw(filecheck maniread maniskip manicheck mkmanifest);
+
+{
+  local $ExtUtils::Manifest::Quiet = 1;
+  my $manimiss = ! -e 'MANIFEST';
+  if (-e 'MANIFEST') {
+    my @extra = manicheck;
+    if (@extra) {
+      die "Files in MANIFEST are missing from file system:\n"
+        . join('', map "  $_\n", @extra);
+    }
+
+    my $read = maniread;
+    my $skip = maniskip;
+
+    my @missing = manicheck;
+    my @remove = grep $skip->($_), sort keys %$read;
+
+    exit 0
+      if !(@missing || @remove);
+  }
+}
+
+warn "Updating MANIFEST:\n";
+mkmanifest;
+warn "Go check it and retry.\n";
+exit 1;
