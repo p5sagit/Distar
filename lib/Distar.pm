@@ -1,5 +1,4 @@
 package Distar;
-
 use strict;
 use warnings FATAL => 'all';
 use base qw(Exporter);
@@ -81,8 +80,8 @@ sub write_manifest_skip {
       LICENSE => 'perl_5',
       MIN_PERL_VERSION => '5.006',
       AUTHOR => ($MM_VER >= 6.5702 ? $Distar::Author : join(', ', @$Distar::Author)),
-      %$args,
       ABSTRACT_FROM => $args->{VERSION_FROM},
+      %$args,
       test => { TESTS => ($args->{test}{TESTS}||'t/*.t').' xt/*.t xt/*/*.t' },
       realclean => { FILES => (
         ($args->{realclean}{FILES}||'')
