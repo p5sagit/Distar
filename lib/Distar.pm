@@ -99,7 +99,19 @@ sub write_manifest_skip {
   sub special_targets {
     my $self = shift;
     my $targets = $self->SUPER::special_targets(@_);
-    $targets =~ s/^(\.PHONY\s*:.*)/$1 preflight releasetest release readmefile distmanicheck nextrelease refresh bump bumpmajor bumpminor/m;
+    my $phony_targets = join ' ', qw(
+      preflight
+      releasetest
+      release
+      readmefile
+      distmanicheck
+      nextrelease
+      refresh
+      bump
+      bumpmajor
+      bumpminor
+    );
+    $targets =~ s/^(\.PHONY *:.*)/$1 $phony_targets/m;
     $targets;
   }
 
