@@ -30,7 +30,7 @@ sub github {
   our $REPO;
   our $BUGTRACKER;
 
-  my (%github_args) = @_;
+  my (%github_args) = ( ref $_[0] ? %{$_[0]} : @_ );
 
   if ( not $github_args{path} and not $github_args{user} ) {
     die "github() must specify either a github relative repo-path (ie: path => 'user/repo') or a user => ";
