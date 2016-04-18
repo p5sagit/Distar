@@ -154,11 +154,12 @@ check-cpan-upload:
 	$(NOECHO) cpan-upload -h $(DEV_NULL_STDOUT)
 releasetest:
 	$(MAKE) disttest RELEASE_TESTING=1 PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
-release: preflight releasetest
-	$(RM_RF) $(DISTVNAME)
-	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
+release: preflight
+	$(MAKE) releasetest
 	git commit -a -m "Release commit for $(VERSION)"
 	git tag v$(VERSION) -m "release v$(VERSION)"
+	$(RM_RF) $(DISTVNAME)
+	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
 	$(NOECHO) $(MAKE) pushrelease FAKE_RELEASE=$(FAKE_RELEASE)
 pushrelease ::
 	$(NOECHO) $(NOOP)
