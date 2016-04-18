@@ -4,6 +4,7 @@ use warnings FATAL => 'all';
 use base qw(Exporter);
 use ExtUtils::MakeMaker ();
 use ExtUtils::MM ();
+use File::Spec ();
 
 our $VERSION = '0.002000';
 $VERSION = eval $VERSION;
@@ -130,7 +131,15 @@ sub write_manifest_skip {
     my @bump_targets =
       grep { $include !~ /^bump$_(?: +\w+)*:/m } ('', 'minor', 'major');
 
+    my $distar = File::Spec->catdir(
+      File::Spec->catpath((File::Spec->splitpath(__FILE__))[0,1], ''),
+      File::Spec->updir,
+    );
+    my $helpers = File::Spec->catdir($distar, 'helpers');
+
     my %vars = (
+      DISTAR => $self->quote_literal($distar),
+      HELPERS => $self->quote_literal($helpers),
       REMAKE => join(' ', '$(PERLRUN)', 'Makefile.PL', map { $self->quote_literal($_) } @ARGV),
       BRANCH => $self->{BRANCH} ||= 'master',
       CHANGELOG => $self->{CHANGELOG} ||= 'Changes',
@@ -145,11 +154,11 @@ sub write_manifest_skip {
       <<'END',
 
 preflight: check-version check-manifest check-cpan-upload
-	$(ABSPERLRUN) Distar/helpers/preflight $(VERSION) --changelog=$(CHANGELOG) --branch=$(BRANCH)
+	$(ABSPERLRUN) $(HELPERS)/preflight $(VERSION) --changelog=$(CHANGELOG) --branch=$(BRANCH)
 check-version:
-	$(ABSPERLRUN) Distar/helpers/check-version $(VERSION) $(TO_INST_PM) $(EXE_FILES)
+	$(ABSPERLRUN) $(HELPERS)/check-version $(VERSION) $(TO_INST_PM) $(EXE_FILES)
 check-manifest:
-	$(ABSPERLRUN) Distar/helpers/check-manifest
+	$(ABSPERLRUN) $(HELPERS)/check-manifest
 check-cpan-upload:
 	$(NOECHO) cpan-upload -h $(DEV_NULL_STDOUT)
 releasetest:
@@ -172,20 +181,21 @@ readmefile: create_distdir
 $(DISTVNAME)/README: $(VERSION_FROM)
 	$(NOECHO) $(MKPATH) $(DISTVNAME)
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
-	$(NOECHO) $(ABSPERLRUN) Distar/helpers/add-to-manifest -d $(DISTVNAME) README
+	$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) README
 disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"
 nextrelease:
-	$(ABSPERLRUN) Distar/helpers/add-changelog-heading --git $(VERSION) $(CHANGELOG)
+	$(ABSPERLRUN) $(HELPERS)/add-changelog-heading --git $(VERSION) $(CHANGELOG)
 refresh:
-	cd Distar && git pull
+	cd $(DISTAR) && git pull
 	$(RM_F) $(FIRST_MAKEFILE)
 	$(REMAKE)
+$(FIRST_MAKEFILE): $(DISTAR)/lib/Distar.pm
 END
       map(sprintf(<<'END', "bump$_", ($_ || '$(V)')), @bump_targets),
 %s:
-	$(ABSPERLRUN) Distar/helpers/bump-version --git $(VERSION) %s
+	$(ABSPERLRUN) $(HELPERS)/bump-version --git $(VERSION) %s
 	$(RM_F) $(FIRST_MAKEFILE)
 	$(REMAKE)
 END
