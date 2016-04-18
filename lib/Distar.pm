@@ -172,7 +172,7 @@ readmefile: create_distdir
 $(DISTVNAME)/README: $(VERSION_FROM)
 	$(NOECHO) $(MKPATH) $(DISTVNAME)
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
-	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) ../Distar/helpers/add-to-manifest README
+	$(NOECHO) $(ABSPERLRUN) Distar/helpers/add-to-manifest -d $(DISTVNAME) README
 disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"
