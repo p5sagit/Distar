@@ -191,7 +191,6 @@ refresh:
 	cd $(DISTAR) && git pull
 	$(RM_F) $(FIRST_MAKEFILE)
 	$(REMAKE)
-$(FIRST_MAKEFILE): $(DISTAR)/lib/Distar.pm
 END
       map(sprintf(<<'END', "bump$_", ($_ || '$(V)')), @bump_targets),
 %s:
