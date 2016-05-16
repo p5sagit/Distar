@@ -126,6 +126,15 @@ sub _clone {
       @$no_index_dir = grep !$seen{$_}++, @$no_index_dir, grep -d, qw(t xt);
     }
 
+    $resources->{bugtracker} ||= do {
+      (my $queue = $meta->{name} || $self->{NAME}) =~ s/::/-/g;
+      my $rt_link = 'https://rt.cpan.org/Dist/Display.html?Name='.$queue;
+      $spec_ver < 2 ? $rt_link : {
+        web => $rt_link,
+        mailto => "bug-$queue\@rt.cpan.org",
+      };
+    };
+
     %$meta;
   }
 
