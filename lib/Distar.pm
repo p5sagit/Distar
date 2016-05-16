@@ -120,6 +120,12 @@ sub _clone {
     my $spec_ver = ($meta->{'meta-spec'} && $meta->{'meta-spec'}{version} || 1.4;
     my $resources = $meta->{resources} ||= {};
 
+    {
+      my $no_index_dir = ${ $meta->{no_index}||={} }{directory} ||= [];
+      my %seen;
+      @$no_index_dir = grep !$seen{$_}++, @$no_index_dir, grep -d, qw(t xt);
+    }
+
     %$meta;
   }
 
