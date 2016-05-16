@@ -70,6 +70,21 @@ sub write_manifest_skip {
   close $skip;
 }
 
+sub _clone {
+  map {
+    if (ref eq 'HASH') {
+      my $struct = $_;
+      { map +($_ => _clone($struct->{$_})), keys %$struct };
+    }
+    elsif (ref eq 'ARRAY') {
+      [ _clone(@$_) ];
+    }
+    else {
+      $_;
+    }
+  } @_;
+}
+
 {
   package Distar::MM;
   our @ISA = @MM::ISA;
@@ -96,6 +111,16 @@ sub write_manifest_skip {
         . ' Distar/ MANIFEST.SKIP MANIFEST MANIFEST.bak'
       ) },
     });
+  }
+
+  sub metafile_data {
+    my $self = shift;
+    my $meta = { Distar::_clone($self->SUPER::metafile_data(@_) };
+
+    my $spec_ver = ($meta->{'meta-spec'} && $meta->{'meta-spec'}{version} || 1.4;
+    my $resources = $meta->{resources} ||= {};
+
+    %$meta;
   }
 
   sub flush {
