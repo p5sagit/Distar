@@ -135,6 +135,17 @@ sub _clone {
       };
     };
 
+    {
+      my $license = $meta->{license} = [
+        map { $_ eq 'perl' ? 'perl_5' : $_ }
+        map { ref ? @$_ : $_ }
+        ( $meta->{license} || $self->{LICENSE} || 'perl_5' )
+      ];
+
+      $resources->{license} ||= [ 'http://dev.perl.org/licenses/' ]
+        if @$license == 1 && $license->[0] eq 'perl_5';
+    }
+
     %$meta;
   }
 
