@@ -159,6 +159,21 @@ sub _clone {
       ];
     };
 
+    if ( eval { require CPAN::Meta; require Module::Metadata; } ) {
+      $meta->{provides} ||= do {
+        my $meta_obj = CPAN::Meta->new($meta, { lazy_validation => 1 });
+        my @files = `git ls-files`;
+        chomp @files;
+        my $provides = Module::Metadata->package_versions_from_directory('.', \@files);
+        for my $module (keys %$provides) {
+          delete $provides->{$module}
+            unless $meta_obj->should_index_package($module)
+              && $meta_obj->should_index_file($provides->{$module}{file});
+        }
+        $provides;
+      };
+    }
+
     %$meta;
   }
 
