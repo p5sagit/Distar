@@ -146,6 +146,19 @@ sub _clone {
         if @$license == 1 && $license->[0] eq 'perl_5';
     }
 
+    $meta->{x_contributors} ||= do {
+      my $author_email =
+        join '|',
+        map quotemeta,
+        map /(\<[^<>]+\@[^<>]\>)/,
+        @$Author;
+      [
+        grep !/$author_email/,
+        map { chomp; s/^\s*\d+\s*//; utf8::decode($_); $_ }
+        `git shortlog -s --email HEAD`
+      ];
+    };
+
     %$meta;
   }
 
