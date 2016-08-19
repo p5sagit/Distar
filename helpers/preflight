@@ -28,8 +28,10 @@ $head eq "refs/heads/$branch"
 chomp(my $upstream = `git for-each-ref --format="%(upstream)" $head`);
 length $upstream
   or die "No upstream branch configured for $branch!\n";
-system qw(git merge-base --is-ancestor), $upstream, $head
-  and die "Not synced with upstream!\n";
+my $base_rev = `git merge-base $upstream $head`;
+my $upstream_rev = `git rev-parse --verify $upstream`;
+$upstream_rev eq $base_rev
+  or die "Not synced with upstream!\n";
 
 for (scalar `git diff`) {
   length && die "Outstanding changes!\n";
