@@ -144,7 +144,7 @@ sub write_manifest_skip {
     my %vars = (
       DISTAR => $self->quote_literal($distar),
       HELPERS => $self->quote_literal($helpers),
-      REMAKE => join(' ', '$(PERLRUN)', 'Makefile.PL', map { $self->quote_literal($_) } @ARGV),
+      REMAKE => join(' ', '$(PERLRUN)', '-I$(DISTAR)/lib', '-mDistar', 'Makefile.PL', map { $self->quote_literal($_) } @ARGV),
       BRANCH => $self->{BRANCH} ||= 'master',
       CHANGELOG => $self->{CHANGELOG} ||= 'Changes',
       DEV_NULL_STDOUT => ($self->{DEV_NULL} ? '>'.File::Spec->devnull : ''),
