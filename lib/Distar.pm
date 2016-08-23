@@ -77,13 +77,18 @@ sub write_manifest_skip {
 
   sub new {
     my ($class, $args) = @_;
+    my %test = %{$args->{test}||{}};
+    my $tests = $test{TESTS} || 't/*.t';
+    $tests !~ /\b\Q$_\E\b/ and $tests .= " $_"
+      for 'xt/*.t', 'xt/*/*.t';
+    $test{TESTS} = $tests;
     return $class->SUPER::new({
       LICENSE => 'perl_5',
       MIN_PERL_VERSION => '5.006',
       AUTHOR => ($MM_VER >= 6.5702 ? $Distar::Author : join(', ', @$Distar::Author)),
       (exists $args->{ABSTRACT} ? () : (ABSTRACT_FROM => $args->{VERSION_FROM})),
       %$args,
-      test => { TESTS => ($args->{test}{TESTS}||'t/*.t').' xt/*.t xt/*/*.t' },
+      test => \%test,
       realclean => { FILES => (
         ($args->{realclean}{FILES}||'')
         . ' Distar/ MANIFEST.SKIP MANIFEST MANIFEST.bak'
