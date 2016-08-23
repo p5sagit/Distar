@@ -186,7 +186,7 @@ pushrelease$(FAKE_RELEASE) ::
 	git push origin v$(VERSION) HEAD
 distdir: readmefile
 readmefile: create_distdir
-	$(NOECHO) $(MAKE) $(DISTVNAME)/README
+	$(NOECHO) $(TEST_F) $(DISTVNAME)/README || $(MAKE) $(DISTVNAME)/README
 $(DISTVNAME)/README: $(VERSION_FROM)
 	$(NOECHO) $(MKPATH) $(DISTVNAME)
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
