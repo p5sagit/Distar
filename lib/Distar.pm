@@ -93,7 +93,11 @@ sub write_manifest_skip {
 
   sub flush {
     my $self = shift;
-    Distar::write_manifest_skip($self);
+    `git ls-files --error-unmatch MANIFEST.SKIP 2>&1`;
+    my $maniskip_tracked = !$?;
+
+    Distar::write_manifest_skip($self)
+      unless $maniskip_tracked;
     $self->SUPER::flush(@_);
   }
 
