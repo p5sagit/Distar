@@ -197,7 +197,7 @@ distmanicheck: create_distdir
 nextrelease:
 	$(ABSPERLRUN) $(HELPERS)/add-changelog-heading --git $(VERSION) $(CHANGELOG)
 refresh:
-	cd $(DISTAR) && git pull
+	cd $(DISTAR) && git pull || $(TRUE)
 	$(RM_F) $(FIRST_MAKEFILE)
 	$(REMAKE)
 END
