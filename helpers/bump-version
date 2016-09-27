@@ -146,11 +146,16 @@ sub version_parts {
   my $version = shift;
   my $dotted = $version =~ s/^v//;
   my @parts = split /\./, $version;
-  if (!$dotted && @parts == 2) {
-    my $dec = pop @parts;
-    $dec =~ s/_//g;
-    $dec .= "0" x ((- length $dec) % 3);
-    push @parts, $dec =~ /(\d{1,3})/g;
+  if (!$dotted && @parts <= 2) {
+    tr/_//d for @parts;
+    if (@parts == 2) {
+      my $dec = pop @parts;
+      $dec .= "0" x ((- length $dec) % 3);
+      push @parts, $dec =~ /(\d{1,3})/g;
+    }
+  }
+  elsif ($version =~ tr/_//) {
+    die "don't know how to handle underscores in dotted-decimal versions!\n";
   }
   $_ += 0 for @parts;
   return @parts;
@@ -180,17 +185,31 @@ sub bump_version {
     }
     else {
       my $alpha_pos = index($version, '_');
-      $version =~ s/_//g;
-      $version =~ s/^(\d+)\.//;
-      my @parts = $1;
-      push @parts, $version =~ /(\d{1,3})/g;
-      my $format = '%i.'.join '', map { '%0'.length($_).'i' } @parts[1 .. $#parts];
-      $parts[$bump_this]++;
-      $parts[$_] = 0 for (($bump_this < 0 ? @parts : 0)+$bump_this+1 .. $#parts);
-      $new_decimal = sprintf $format, @parts;
-      substr $new_decimal, $alpha_pos, 0, '_'
-        if $alpha_pos != -1;
-      $new_vstring = join '.', version_parts($new_decimal);
+      if ($alpha_pos == -1) {
+        undef $alpha_pos;
+      }
+      else {
+        my $dot_pos = index($version, '.');
+        $alpha_pos = $dot_pos == -1 ? -$alpha_pos : $alpha_pos - $dot_pos;
+      }
+      $new_decimal = $version;
+      $new_decimal =~ tr/_//d;
+      my $dec_len = $new_decimal =~ /(\.\d+)/ ? length($1) - 1 : 0;
+      if ($bump_this != -1) {
+        my $cut_len = $bump_this * 3;
+        $dec_len = $cut_len
+          if $dec_len < $cut_len;
+        $new_decimal =~ s/(\..{1,$cut_len}).*/$1/;
+      }
+      $new_decimal += 10 ** -($bump_this == -1 ? $dec_len : ($bump_this * 3));
+      $new_decimal = sprintf "%.${dec_len}f", $new_decimal;
+      if (defined $alpha_pos) {
+        my $dot_pos = index($new_decimal, '.');
+        $dot_pos = length $new_decimal
+          if $dot_pos == -1;
+        substr $new_decimal, $dot_pos + $alpha_pos, 0, '_';
+      }
+      $new_vstring = 'v' . join '.', version_parts($new_decimal);
     }
   }
   elsif ($new =~ /^v?[0-9]+(?:[._][0-9]+)*$/) {
