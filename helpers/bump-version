@@ -11,7 +11,9 @@ GetOptions(
   "force"   => \my $force,
 ) or die("Error in command line arguments\n");
 
-my ($old_version, $bump) = @ARGV;
+my $old_version = shift
+  or die "no old version provided!\n";
+my $bump = shift;
 my ($new_decimal, $new_vstring) = bump_version($old_version, $bump);
 
 warn "Bumping $old_version -> $new_decimal\n";
