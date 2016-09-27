@@ -17,7 +17,7 @@ my $old_version = shift
 my $bump = shift;
 my ($new_decimal, $new_vstring) = bump_version($old_version, $bump);
 
-warn "Bumping $old_version -> $new_decimal\n";
+warn "Bumping $old_version -> $new_decimal" . ($new_decimal ne $new_vstring ? " ($new_vstring)" : '') . "\n";
 
 my $file_match = qr{
   Makefile\.PL
@@ -167,14 +167,16 @@ sub bump_version {
 
   if (defined $bump_this) {
     if ($version =~ /^v/ || ($version =~ tr/.//) > 1) {
+      my $v = $version =~ /^(v)/ ? $1 : '';
       my @parts = version_parts($version);
+      $bump_this += @parts
+        if $bump_this < 0;
+      $parts[$_] = 0 for $bump_this+1 .. $#parts;
+      $parts[$_] = 0 for $#parts+1 .. $bump_this;
       $parts[$bump_this]++;
-      $parts[$_] = 0 for (($bump_this < 0 ? @parts : 0)+$bump_this+1 .. $#parts);
       $_ += 0
         for @parts;
-      $new_vstring = join '.', @parts;
-      my $format = '%i.'. join '', map { '%03i' } @parts[1 .. $#parts];
-      $new_decimal = sprintf $format, @parts;
+      $new_decimal = $new_vstring = $v . join '.', @parts;
     }
     else {
       my $alpha_pos = index($version, '_');
