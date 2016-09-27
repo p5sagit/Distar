@@ -16,7 +16,7 @@ use ExtUtils::Manifest qw(filecheck maniread maniskip manicheck mkmanifest);
     my $read = maniread;
     my $skip = maniskip;
 
-    my @missing = manicheck;
+    my @missing = filecheck;
     my @remove = grep $skip->($_), sort keys %$read;
 
     exit 0
