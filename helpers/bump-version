@@ -18,12 +18,22 @@ my ($new_decimal, $new_vstring) = bump_version($old_version, $bump);
 
 warn "Bumping $old_version -> $new_decimal\n";
 
-my $file_match = qr{^(?:
+my $file_match = qr{
   Makefile\.PL
   |lib[/\\].*\.(?:pod|pm)
   |bin[/\\].*
   |script[/\\].*
-)$}x;
+}x;
+
+my $dir_match = qr{
+  (?:
+    .
+    |lib
+    |bin
+    |script
+  )
+  (?:[/\\]|$)
+}x;
 
 my %files;
 if ($git) {
@@ -33,7 +43,7 @@ if ($git) {
   for (`git ls-files`) {
     chomp;
     next
-      unless /$file_match/;
+      unless /^$file_match$/;
     $files{$_} = `git show HEAD:"$_"`;
   }
 }
@@ -41,13 +51,18 @@ else {
   find({
     no_chdir => 1,
     wanted => sub {
-      next
+      my $fn = File::Spec->abs2rel($_, '.');
+      if (-d && $fn !~ /^$dir_match$/) {
+        $File::Find::prune = 1;
+        return;
+      }
+      return
         unless -f;
-      next
-        unless /(?:\.[\/\\])?$file_match/;
-      open my $fh, '<', $_
-        or die "can't open $_: $!";
-      $files{$_} = do { local $/; <$fh> };
+      return
+        unless $fn =~ /^$file_match$/;
+      open my $fh, '<', $fn
+        or die "can't open $fn: $!";
+      $files{$fn} = do { local $/; <$fh> };
       close $fh;
     },
   }, '.');
