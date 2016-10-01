@@ -10,12 +10,16 @@ GetOptions(
   "git"     => \my $git,
   "force"   => \my $force,
   'n|dry-run' => \my $dry_run,
+  'stable'  => \my $stable,
+  'alpha'   => \my $alpha,
 ) or die("Error in command line arguments\n");
 
 my $old_version = shift
   or die "no old version provided!\n";
 my $bump = shift;
 my ($new_decimal, $new_vstring) = bump_version($old_version, $bump);
+die "--stable and --alpha are incompatible!\n"
+  if $stable and $alpha;
 
 warn "Bumping $old_version -> $new_decimal" . ($new_decimal ne $new_vstring ? " ($new_vstring)" : '') . "\n";
 
@@ -173,6 +177,9 @@ sub bump_version {
   if (defined $bump_this) {
     if ($version =~ /^v/ || ($version =~ tr/.//) > 1) {
       my $v = $version =~ /^(v)/ ? $1 : '';
+      if ($version =~ tr/_//d && !$stable || $alpha) {
+        die "can't bump dotted decimal versions with alpha components!\n";
+      }
       my @parts = version_parts($version);
       $bump_this += @parts
         if $bump_this < 0;
@@ -184,13 +191,16 @@ sub bump_version {
       $new_decimal = $new_vstring = $v . join '.', @parts;
     }
     else {
-      my $alpha_pos = index($version, '_');
-      if ($alpha_pos == -1) {
-        undef $alpha_pos;
-      }
-      else {
-        my $dot_pos = index($version, '.');
-        $alpha_pos = $dot_pos == -1 ? -$alpha_pos : $alpha_pos - $dot_pos;
+      my $alpha_pos;
+      if (!$stable) {
+        $alpha_pos = index($version, '_');
+        if ($alpha_pos == -1) {
+          undef $alpha_pos;
+        }
+        else {
+          my $dot_pos = index($version, '.');
+          $alpha_pos = $dot_pos == -1 ? -$alpha_pos : $alpha_pos - $dot_pos;
+        }
       }
       $new_decimal = $version;
       $new_decimal =~ tr/_//d;
@@ -203,6 +213,10 @@ sub bump_version {
       }
       $new_decimal += 10 ** -($bump_this == -1 ? $dec_len : ($bump_this * 3));
       $new_decimal = sprintf "%.${dec_len}f", $new_decimal;
+      if ($alpha) {
+        $alpha_pos ||= $dec_len >= 2 ? int($dec_len / 2) + 1 :
+          die "don't know how to make $new_decimal into an alpha version";
+      }
       if (defined $alpha_pos) {
         my $dot_pos = index($new_decimal, '.');
         $dot_pos = length $new_decimal
