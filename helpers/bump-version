@@ -9,6 +9,7 @@ use File::Temp ();
 GetOptions(
   "git"     => \my $git,
   "force"   => \my $force,
+  'n|dry-run' => \my $dry_run,
 ) or die("Error in command line arguments\n");
 
 my $old_version = shift
@@ -91,34 +92,41 @@ my $MAKE_RE = qr{
 
 my $patch = '';
 for my $file (sort keys %files) {
-  my $content = $files{$file};
-  my $file_diff = '';
-  my $re = $file eq 'Makefile.PL' ? $MAKE_RE : $FILE_RE;
-  my @lines = split /\r?\n/, $content;
-  for my $ln (0 .. $#lines) {
-    my $line = $lines[$ln];
-    if ($lines[$ln] =~ $re) {
-      die "unable to bump version number in $file from $old_version, found $3\n"
-        if !$force && $3 ne $old_version;
-      my $comment = ($5 ? $5 . $new_vstring : '');
-      my $new_line = "$1'$new_decimal'$4$comment$6";
-      $file_diff .= <<"END_DIFF";
+  eval {
+    my $content = $files{$file};
+    my $file_diff = '';
+    my $re = $file eq 'Makefile.PL' ? $MAKE_RE : $FILE_RE;
+    my @lines = split /\r?\n/, $content;
+    for my $ln (0 .. $#lines) {
+      my $line = $lines[$ln];
+      if ($lines[$ln] =~ $re) {
+        die "unable to bump version number in $file from $old_version, found $3\n"
+          if !$force && $3 ne $old_version;
+        my $comment = ($5 ? $5 . $new_vstring : '');
+        my $new_line = "$1'$new_decimal'$4$comment$6";
+        $file_diff .= <<"END_DIFF";
 @@ -@{[ $ln ]},3 +@{[ $ln ]},3 @@
  $lines[$ln-1]
 -$lines[$ln]
 +$new_line
  $lines[$ln+1]
 END_DIFF
+      }
     }
-  }
-  if ($file_diff) {
-    $patch .= <<"END_HEADER" . $file_diff;
+    if ($file_diff) {
+      $patch .= <<"END_HEADER" . $file_diff;
 --- a/$file
 +++ b/$file
 END_HEADER
-  }
+    }
+    1;
+  } or $dry_run ? warn($@) : die($@);
 }
 
+if ($dry_run) {
+  print $patch;
+  exit;
+}
 my ($fh, $file) = File::Temp::tempfile( "bump-version-XXXXXX", TMPDIR => 1 );
 print { $fh } $patch;
 close $fh;
