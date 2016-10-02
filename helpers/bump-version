@@ -188,6 +188,9 @@ sub bump_version {
       $parts[$bump_this]++;
       $_ += 0
         for @parts;
+      if (grep $_ > 999, @parts[1 .. $#parts]) {
+        warn "$new_decimal has a version component greater than 999.  It will be incompatible with some uses in perl.\n";
+      }
       $new_decimal = $new_vstring = $v . join '.', @parts;
     }
     else {
