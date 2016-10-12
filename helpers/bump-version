@@ -101,17 +101,32 @@ for my $file (sort keys %files) {
     my $file_diff = '';
     my $re = $file eq 'Makefile.PL' ? $MAKE_RE : $FILE_RE;
     my @lines = split /\r?\n/, $content;
+    my $in_pod = '';
     for my $ln (0 .. $#lines) {
       my $line = $lines[$ln];
-      if ($lines[$ln] =~ $re) {
+      my $new_line;
+      if ($in_pod && $line =~ /^=cut$/) {
+        $in_pod = '';
+      }
+      elsif ($line =~ /^=\w+/) {
+        $in_pod = $line;
+      }
+      elsif (!$in_pod && $line =~ $re) {
         die "unable to bump version number in $file from $old_version, found $3\n"
           if !$force && $3 ne $old_version;
         my $comment = ($5 ? $5 . $new_vstring : '');
-        my $new_line = "$1'$new_decimal'$4$comment$6";
+        $new_line = "$1'$new_decimal'$4$comment$6";
+      }
+      elsif ($in_pod =~ /\bversion\b/i && $lines[$ln] =~ /^((?:version\s+)?)v?([0-9]+(?:[._][0-9]+)*)$/) {
+        die "unable to bump version number in $file from $old_version, found $2\n"
+          if !$force && $2 ne $old_version;
+        $new_line = "$1$new_decimal";
+      }
+      if (defined $new_line) {
         $file_diff .= <<"END_DIFF";
 @@ -@{[ $ln ]},3 +@{[ $ln ]},3 @@
  $lines[$ln-1]
--$lines[$ln]
+-$line
 +$new_line
  $lines[$ln+1]
 END_DIFF
