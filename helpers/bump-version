@@ -57,7 +57,7 @@ else {
     no_chdir => 1,
     wanted => sub {
       my $fn = File::Spec->abs2rel($_, '.');
-      if (-d && $fn !~ /^$dir_match$/) {
+      if (-d && $fn !~ /^$dir_match/) {
         $File::Find::prune = 1;
         return;
       }
