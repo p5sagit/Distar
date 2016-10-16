@@ -191,6 +191,7 @@ $(DISTVNAME)/README: $(VERSION_FROM)
 	$(NOECHO) $(MKPATH) $(DISTVNAME)
 	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
 	$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) README
+distsignature: readmefile
 disttest: distmanicheck
 distmanicheck: create_distdir
 	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"
