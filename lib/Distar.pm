@@ -154,10 +154,14 @@ sub write_manifest_skip {
       CHANGELOG => $self->{CHANGELOG} ||= 'Changes',
       DEV_NULL_STDOUT => ($self->{DEV_NULL} ? '>'.File::Spec->devnull : ''),
       FAKE_RELEASE => '',
+      DISTTEST_MAKEFILE_PARAMS => '',
     );
 
+    my $dist_test = $self->SUPER::dist_test(@_);
+    $dist_test =~ s/(\bMakefile\.PL\b)/$1 \$(DISTTEST_MAKEFILE_PARAMS)/;
+
     join('',
-      $self->SUPER::dist_test(@_),
+      $dist_test,
       "\n\n# --- Distar section:\n\n",
       (map "$_ = $vars{$_}\n", sort keys %vars),
       <<'END',
@@ -171,7 +175,7 @@ check-manifest:
 check-cpan-upload:
 	$(NOECHO) cpan-upload -h $(DEV_NULL_STDOUT)
 releasetest:
-	$(MAKE) disttest RELEASE_TESTING=1 PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
+	$(MAKE) disttest RELEASE_TESTING=1 DISTTEST_MAKEFILE_PARAMS="PREREQ_FATAL=1" PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
 release: preflight
 	$(MAKE) releasetest
 	git commit -a -m "Release commit for $(VERSION)"
