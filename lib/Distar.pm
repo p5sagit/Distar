@@ -128,6 +128,16 @@ sub write_manifest_skip {
     $targets;
   }
 
+  sub tarfile_target {
+    my $self = shift;
+    my $out = $self->SUPER::tarfile_target(@_);
+    my $verify = <<'END_FRAG';
+	$(ABSPERLRUN) $(HELPERS)/verify-tarball $(DISTVNAME).tar $(DISTVNAME)/MANIFEST --tar="$(TAR)"
+END_FRAG
+    $out =~ s{(\$\(TAR\).*\n)}{$1$verify};
+    $out;
+  }
+
   sub dist_test {
     my $self = shift;
 

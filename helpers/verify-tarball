@@ -1,0 +1,61 @@
+#!/usr/bin/env perl
+use strict;
+use warnings FATAL => 'all';
+
+use ExtUtils::Manifest qw(maniread);
+use File::Spec;
+use Getopt::Long qw(:config gnu_getopt);
+
+GetOptions(
+  'tar=s'   => \(my $tar = 'tar'),
+) or die("Error in command line arguments\n");
+
+my ($tarball, $manifest) = @ARGV;
+my $type
+  = $tarball =~ /\.bz2$/  ? 'j'
+  : $tarball =~ /\.xz$/   ? 'J'
+  : $tarball =~ /\.t?gz$/ ? 'z'
+  : $tarball =~ /\.Z$/    ? 'Z'
+  : '';
+
+my @tarfiles;
+{
+  my $null = File::Spec->devnull;
+  @tarfiles = `$tar -t -$type -f $tarball 2>$null`;
+  chomp @tarfiles;
+}
+
+{
+  my $prefix;
+  for my $path (@tarfiles) {
+    if (!defined $prefix) {
+      ($prefix) = $path =~ m{^([^/]+)};
+    }
+    elsif ($path !~ m{^\Q$prefix\E(?:/|$)}) {
+      undef $prefix;
+      last;
+    }
+  }
+  if ($prefix) {
+    s{^\Q$prefix\E/}{} for @tarfiles;
+  }
+}
+
+@tarfiles = grep !m{(?:^|/)$}, @tarfiles;
+my %tarfiles = map +($_ => 1), @tarfiles;
+
+my %manifiles = %{ maniread($manifest) };
+
+my @extra = grep { !exists $manifiles{$_} } sort keys %tarfiles;
+my @missing = grep { !exists $tarfiles{$_} } sort keys %manifiles;
+
+my $message = '';
+if (@extra) {
+  $message .= "$tarball has extra files:\n" . join '', map "  $_\n", @extra;
+}
+if (@missing) {
+  $message .= "$tarball is missing files:\n" . join '', map "  $_\n", @missing;
+}
+die $message
+  if $message;
+exit 0;
