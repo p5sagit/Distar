@@ -226,7 +226,7 @@ Distar - Additions to ExtUtils::MakeMaker for dist authors
 F<Makefile.PL>:
 
   use ExtUtils::MakeMaker;
-  (do 'maint/Makefile.PL.include' or die $@) unless -f 'META.yml';
+  (do './maint/Makefile.PL.include' or die $@) unless -f 'META.yml';
 
   WriteMakefile(...);
 
@@ -251,8 +251,12 @@ make commmands:
   $ make nextrelease      # add version heading to Changes file
   $ make releasetest      # build dist and test (with xt/ and RELEASE_TESTING=1)
   $ make preflight        # check that repo and file state is release ready
-  $ make release          # check releasetest and preflight, then build and
-                          # upload to CPAN, tag release, push tag and branch
+  $ make release          # check releasetest and preflight, commits and tags,
+                          # builds and uploads to CPAN, and pushes commits and
+                          # tag
+  $ make release FAKE_RELEASE=1
+                          # builds a release INCLUDING committing and tagging,
+                          # but does not upload to cpan or push anything to git
 
 =head1 DESCRIPTION
 
@@ -318,7 +322,7 @@ C<preflight> and C<releasetest> commands.
 Releasing will generate a dist tarball and upload it to CPAN using cpan-upload.
 It will also create a git tag for the release, and push the tag and branch.
 
-=head2 FAKE_RELEASE
+=head3 FAKE_RELEASE
 
 If release is run with FAKE_RELEASE=1 set, it will skip uploading to CPAN and
 pushing to git.  A release commit will still be created and tagged locally.
@@ -362,12 +366,39 @@ change.
 =head2 bump
 
 Bumps the version number.  This will try to preserve the length and format of
-the version number.  The least significant digit will be incremented.
+the version number.  The least significant digit will be incremented.  Versions
+with underscores will preserve the underscore in the same position.
 
 Optionally accepts a C<V> option to set the version to a specific value.
 
 The version changes will automatically be committed.  Unstaged modifications to
 the files will be left untouched.
+
+=head3 V
+
+The V option will be passed along to the version bumping script.  It can accept
+a space separated list of options, including an explicit version number.
+
+Options:
+
+=over 4
+
+=item --force
+
+Updates version numbers even if they do not match the current expected version
+number.
+
+=item --stable
+
+Attempts to convert the updated version to a stable version, removing any
+underscore.
+
+=item --alpha
+
+Attempts to convert the updated version to an alpha version, adding an
+underscore in an appropriate place.
+
+=back
 
 =head2 bumpminor
 
@@ -398,7 +429,7 @@ mst - Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>
 
 haarg - Graham Knop (cpan:HAARG) <haarg@cpan.org>
 
-ether = Karen Etheridge (cpan:ETHER) <ether@cpan.org>
+ether - Karen Etheridge (cpan:ETHER) <ether@cpan.org>
 
 frew - Arthur Axel "fREW" Schmidt (cpan:FREW) <frioux@gmail.com>
 
