@@ -163,7 +163,6 @@ END_FRAG
       BRANCH => $self->{BRANCH} ||= 'master',
       CHANGELOG => $self->{CHANGELOG} ||= 'Changes',
       DEV_NULL_STDOUT => ($self->{DEV_NULL} ? '>'.File::Spec->devnull : ''),
-      FAKE_RELEASE => '',
       DISTTEST_MAKEFILE_PARAMS => '',
     );
 
