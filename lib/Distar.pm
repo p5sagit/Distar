@@ -128,6 +128,53 @@ sub write_manifest_skip {
     $targets;
   }
 
+  sub init_dist {
+    my $self = shift;
+    my $pre_tar = $self->{TAR};
+    my $out = $self->SUPER::init_dist(@_);
+
+    my $tar = $self->{TAR};
+    my $gtar;
+    my $set_user;
+    my $version = `$tar --version`;
+    if ($version =~ /GNU tar/) {
+      $gtar = 1;
+    }
+    elsif (!$pre_tar && `gtar --version`) {
+      $tar = 'gtar';
+      $gtar = 1;
+    }
+    my $tarflags = $self->{TARFLAGS};
+    if (my ($flags) = $tarflags =~ /^-?([cvhlLf]+)$/) {
+      if ($flags =~ s/c// && $flags =~ s/f//) {
+        $tarflags = '--format=ustar -c'.$flags.'f';
+        if ($gtar) {
+          $tarflags = '--owner=0 --group=0 '.$tarflags;
+          $set_user = 1;
+        }
+      }
+    }
+
+    if (!$set_user) {
+      my $warn = '';
+      if ($> >= 2**21) {
+        $warn .= "uid ($>)";
+      }
+      if ($) >= 2**21) {
+        $warn .= ($warn ? ' and ' : '').'gid('.(0+$)).')';
+      }
+      if ($warn) {
+        warn "$warn too large!  Max is ".(2**21-1).".\n"
+          ."Dist creation will likely fail.  Install GNU tar to work around.\n";
+      }
+    }
+
+    $self->{TAR} = $tar;
+    $self->{TARFLAGS} = $tarflags;
+
+    $out;
+  }
+
   sub tarfile_target {
     my $self = shift;
     my $out = $self->SUPER::tarfile_target(@_);
