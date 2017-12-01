@@ -12,16 +12,16 @@ GetOptions(
 
 my ($tarball, $manifest) = @ARGV;
 my $type
-  = $tarball =~ /\.bz2$/  ? 'j'
-  : $tarball =~ /\.xz$/   ? 'J'
-  : $tarball =~ /\.t?gz$/ ? 'z'
-  : $tarball =~ /\.Z$/    ? 'Z'
+  = $tarball =~ /\.bz2$/  ? '-j'
+  : $tarball =~ /\.xz$/   ? '-J'
+  : $tarball =~ /\.t?gz$/ ? '-z'
+  : $tarball =~ /\.Z$/    ? '-Z'
   : '';
 
 my @tarfiles;
 {
   my $null = File::Spec->devnull;
-  @tarfiles = `$tar -t -$type -f $tarball 2>$null`;
+  @tarfiles = `$tar -t $type -f "$tarball" 2>$null`;
   chomp @tarfiles;
 }
 
