@@ -85,7 +85,9 @@ sub write_manifest_skip {
     return $class->SUPER::new({
       LICENSE => 'perl_5',
       MIN_PERL_VERSION => '5.006',
-      AUTHOR => ($MM_VER >= 6.5702 ? $Distar::Author : join(', ', @$Distar::Author)),
+      ($Distar::AUTHOR ? (
+        AUTHOR => ($MM_VER >= 6.5702 ? $Distar::Author : join(', ', @$Distar::Author)),
+      ) : ()),
       (exists $args->{ABSTRACT} ? () : (ABSTRACT_FROM => $args->{VERSION_FROM})),
       %$args,
       test => \%test,
