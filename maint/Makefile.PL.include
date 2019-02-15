@@ -1,0 +1,8 @@
+use lib 'lib';
+use Distar;
+
+author 'mst - Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>';
+
+manifest_include 'lib/Distar/helpers' => qr/.*/;
+
+1;
