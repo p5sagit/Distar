@@ -6,7 +6,7 @@ use ExtUtils::MakeMaker ();
 use ExtUtils::MM ();
 use File::Spec ();
 
-our $VERSION = '0.002000';
+our $VERSION = '0.003000';
 $VERSION = eval $VERSION;
 
 my $MM_VER = eval $ExtUtils::MakeMaker::VERSION;

@@ -1,0 +1,46 @@
+Revision history for Distar
+
+v0.003000 - 2019-02-15
+  - generate LICENSE file if possible
+  - try to enforce tar format and uid/gid in tar files to avoid compatibility
+    problems
+  - verify that release tarballs contain the correct files
+  - prevent releasing if prerequisites aren't locally satisfied
+  - bump version notes in Pod as well
+  - fixes for handling README files from repository
+  - don't generate MANIFEST.SKIP if it is a committed file
+  - allow EUMM's ABSTRACT or ABSTRACT_FROM to be used
+  - add FAKE_RELEASE option to do release without pushing or uploading
+  - added documentation
+  - allow branch and Changes file name to be changed
+  - internal refactoring
+  - run xt tests when running release tests to ensure they function correctly
+    when packaged
+  - when bumping versions, also check for versions in bin scripts
+  - never try to package files in dist dirs
+  - in nextrelease, try to show full Changes section when prompting to add
+    heading line
+  - improve version bumping to handle shorter numeric versions
+  - add LICENSE to list of default packaged files
+
+v0.002000 - 2015-07-22
+  - numerous internal refactors
+  - include README from source if one exists, rather than generating one
+  - add bump, bumpminor, and bumpmajor targets to bump version numbers
+  - add nextrelease target to add release heading to Changes file
+  - Generate MANIFEST.SKIP file when writing Makefile rather than on process
+    end
+  - include .pod files in default list of packaged files
+  - use UTC date in Changes file
+  - stop release process early if cpan-changes not available
+  - fix compatibility with ancient ExtUtils::MakeMaker
+  - validate manifest in disttest
+  - include xt subdirectories in author testing
+  - fix compatibility with newer git versions
+  - drop strictures prerequisite
+  - stop release on duplicate version before making any changes
+  - remove use of autodie to allow compatibility with earlier perl versions
+
+v0.001000 - 2013-07-18
+  - Initial marked release
+
