@@ -175,7 +175,7 @@ END_FRAG
     my $self = shift;
 
     my $distar_lib = File::Basename::dirname(__FILE__);
-    my $helpers = File::Spec->catdir($distar_lib, File::Spec->updir, 'helpers');
+    my $helpers = File::Spec->catdir($distar_lib, 'Distar', 'helpers');
 
     my $licenses = $self->{LICENSE} || $self->{META_ADD}{license} || $self->{META_MERGE}{license};
     my $authors = $self->{AUTHOR};
