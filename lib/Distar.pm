@@ -18,6 +18,10 @@ our @EXPORT = qw(
 sub import {
   strict->import;
   warnings->import(FATAL => 'all');
+  if (!(@MM::ISA == 1 && $MM::ISA[0] eq 'Distar::MM')) {
+    @Distar::MM::ISA = @MM::ISA;
+    @MM::ISA = qw(Distar::MM);
+  }
   shift->export_to_level(1,@_);
 }
 
@@ -72,8 +76,6 @@ sub write_manifest_skip {
 
 {
   package Distar::MM;
-  our @ISA = @MM::ISA;
-  @MM::ISA = (__PACKAGE__);
 
   sub new {
     my ($class, $args) = @_;
