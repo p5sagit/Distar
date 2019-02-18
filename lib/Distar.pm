@@ -22,7 +22,7 @@ sub import {
     @Distar::MM::ISA = @MM::ISA;
     @MM::ISA = qw(Distar::MM);
   }
-  shift->export_to_level(1,@_);
+  goto &Exporter::import;
 }
 
 sub author {
