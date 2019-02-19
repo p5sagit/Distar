@@ -268,7 +268,6 @@ licensefile: create_distdir
 $(DISTVNAME)/LICENSE: Makefile.PL
 	$(NOECHO) $(MKPATH) $(DISTVNAME)
 	$(ABSPERLRUN) $(HELPERS)/generate-license $(AUTHORS) $(LICENSES) >$(DISTVNAME)/LICENSE
-	$(NOECHO) cd $(DISTVNAME) && $(ABSPERLRUN) $(HELPERS)/add-to-manifest LICENSE
 	$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) LICENSE
 disttest: distmanicheck
 distmanicheck: create_distdir
