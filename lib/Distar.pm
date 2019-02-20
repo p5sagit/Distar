@@ -5,6 +5,7 @@ use base qw(Exporter);
 use ExtUtils::MakeMaker ();
 use ExtUtils::MM ();
 use File::Spec ();
+use File::Basename ();
 
 our $VERSION = '0.003000';
 $VERSION = eval $VERSION;
