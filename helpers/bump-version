@@ -253,4 +253,3 @@ sub bump_version {
   }
   return ($new_decimal, $new_vstring);
 }
-
