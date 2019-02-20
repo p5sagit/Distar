@@ -201,11 +201,8 @@ END_FRAG
     my @bump_targets =
       grep { $include !~ /^bump$_(?: +\w+)*:/m } ('', 'minor', 'major');
 
-    my $distar = File::Spec->catdir(
-      File::Spec->catpath((File::Spec->splitpath(__FILE__))[0,1], ''),
-      File::Spec->updir,
-    );
-    my $helpers = File::Spec->catdir($distar, 'helpers');
+    my $distar_lib = File::Basename::dirname(__FILE__);
+    my $helpers = File::Spec->catdir($distar_lib, File::Spec->updir, 'helpers');
 
     my $licenses = $self->{LICENSE} || $self->{META_ADD}{license} || $self->{META_MERGE}{license};
     my $authors = $self->{AUTHOR};
@@ -213,9 +210,9 @@ END_FRAG
       for $licenses, $authors;
 
     my %vars = (
-      DISTAR => $self->quote_literal($distar),
+      DISTAR_LIB => $self->quote_literal($distar_lib),
       HELPERS => $self->quote_literal($helpers),
-      REMAKE => join(' ', '$(PERLRUN)', '-I$(DISTAR)/lib', '-MDistar', 'Makefile.PL', map { $self->quote_literal($_) } @ARGV),
+      REMAKE => join(' ', '$(PERLRUN)', '-I$(DISTAR_LIB)', '-MDistar', 'Makefile.PL', map { $self->quote_literal($_) } @ARGV),
       BRANCH => $self->{BRANCH} ||= 'master',
       CHANGELOG => $self->{CHANGELOG} ||= 'Changes',
       DEV_NULL_STDOUT => ($self->{DEV_NULL} ? '>'.File::Spec->devnull : ''),
@@ -223,6 +220,11 @@ END_FRAG
       AUTHORS => $self->quote_literal(join(', ', @$authors)),
       LICENSES => join(' ', map $self->quote_literal($_), @$licenses),
       GET_CHANGELOG => '$(ABSPERLRUN) $(HELPERS)/get-changelog $(VERSION) $(CHANGELOG)',
+      UPDATE_DISTAR => (
+        -e File::Spec->catdir($distar_lib, File::Spec->updir, '.git')
+          ? 'git -C $(DISTAR_LIB) pull'
+          : '$(ECHO) "Distar code is not in a git repo, unable to update!"'
+      ),
     );
 
     my $dist_test = $self->SUPER::dist_test(@_);
@@ -276,7 +278,7 @@ distmanicheck: create_distdir
 nextrelease:
 	$(ABSPERLRUN) $(HELPERS)/add-changelog-heading --git $(VERSION) $(CHANGELOG)
 refresh:
-	cd $(DISTAR) && git pull || $(TRUE)
+	$(UPDATE_DISTAR)
 	$(RM_F) $(FIRST_MAKEFILE)
 	$(REMAKE)
 END
