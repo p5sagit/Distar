@@ -138,14 +138,15 @@ sub write_manifest_skip {
     my $pre_tar = $self->{TAR};
     my $out = $self->SUPER::init_dist(@_);
 
+    my $dn = File::Spec->devnull;
     my $tar = $self->{TAR};
     my $gtar;
     my $set_user;
-    my $version = `$tar --version`;
+    my $version = `$tar --version 2>$dn`;
     if ($version =~ /GNU tar/) {
       $gtar = 1;
     }
-    elsif (!$pre_tar && `gtar --version`) {
+    elsif (!$pre_tar && `gtar --version 2>$dn`) {
       $tar = 'gtar';
       $gtar = 1;
     }
