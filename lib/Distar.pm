@@ -248,6 +248,8 @@ check-cpan-upload:
 	$(NOECHO) cpan-upload -h $(DEV_NULL_STDOUT)
 releasetest:
 	$(MAKE) disttest RELEASE_TESTING=1 DISTTEST_MAKEFILE_PARAMS="PREREQ_FATAL=1" PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
+	$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE || $(ECHO) "Failed to generate $(DISTVNAME)/LICENSE!" >&2
+	$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE
 release: preflight
 	$(MAKE) releasetest
 	$(GET_CHANGELOG) -p"Release commit for $(VERSION)" | git commit -a -F -
@@ -269,10 +271,10 @@ $(DISTVNAME)/README: $(VERSION_FROM)
 	$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) README
 distsignature: readmefile licensefile
 licensefile: create_distdir
-	$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE || $(MAKE) $(DISTVNAME)/LICENSE
+	$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE || $(MAKE) $(DISTVNAME)/LICENSE || $(TRUE)
 $(DISTVNAME)/LICENSE: Makefile.PL
 	$(NOECHO) $(MKPATH) $(DISTVNAME)
-	$(ABSPERLRUN) $(HELPERS)/generate-license $(AUTHORS) $(LICENSES) >$(DISTVNAME)/LICENSE
+	$(ABSPERLRUN) $(HELPERS)/generate-license -o $(DISTVNAME)/LICENSE $(AUTHORS) $(LICENSES)
 	$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) LICENSE
 disttest: distmanicheck
 distmanicheck: create_distdir

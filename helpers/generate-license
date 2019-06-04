@@ -3,11 +3,25 @@ use strict;
 use warnings;
 
 use Software::LicenseUtils;
+use Getopt::Long qw(:config gnu_getopt);
+
+GetOptions(
+  "o|output=s"    => \(my $output = '-'),
+) or die("Error in command line arguments!\n");
 
 my ($authors, @licenses) = @ARGV;
 
+my $out;
+if ($output eq '-') {
+  $out = \*STDOUT;
+}
+else {
+  open $out, '>', $output
+    or die "Unable to write to $output: $!\n";
+}
+
 my %uniq;
-print
+print { $out }
   join "\n\n",
   map { $_->new({holder => $authors})->license }
   grep { !$uniq{$_}++ }
