@@ -209,15 +209,6 @@ END_FRAG
   sub dist_test {
     my $self = shift;
 
-    my $include = '';
-    if (open my $fh, '<', 'maint/Makefile.include') {
-      $include = "\n# --- Makefile.include:\n\n" . do { local $/; <$fh> };
-      $include =~ s/\n?\z/\n/;
-    }
-
-    my @bump_targets =
-      grep { $include !~ /^bump$_(?: +\w+)*:/m } ('', 'minor', 'major');
-
     my $distar_lib = File::Basename::dirname(__FILE__);
     my $helpers = File::Spec->catdir($distar_lib, File::Spec->updir, 'helpers');
 
@@ -247,12 +238,15 @@ END_FRAG
     my $dist_test = $self->SUPER::dist_test(@_);
     $dist_test =~ s/(\bMakefile\.PL\b)/$1 \$(DISTTEST_MAKEFILE_PARAMS)/;
 
-    join('',
-      $dist_test,
-      "\n\n# --- Distar section:\n\n",
-      (map "$_ = $vars{$_}\n", sort keys %vars),
-      <<'END',
+    my $include = '';
+    if (open my $fh, '<', 'maint/Makefile.include') {
+      $include = do { local $/; <$fh> };
+      $include =~ s/\n?\z/\n/;
+    }
 
+    my @out;
+
+    push @out, <<'END';
 preflight: check-version check-manifest check-cpan-upload
 	$(ABSPERLRUN) $(HELPERS)/preflight $(VERSION) --changelog=$(CHANGELOG) --branch=$(BRANCH)
 check-version:
@@ -301,13 +295,31 @@ refresh:
 	$(RM_F) $(FIRST_MAKEFILE)
 	$(REMAKE)
 END
-      map(sprintf(<<'END', "bump$_", ($_ || '$(V)')), @bump_targets),
+    my @bump_targets =
+      grep { $include !~ /^bump$_(?: +\w+)*:/m } ('', 'minor', 'major');
+
+    for my $target (@bump_targets) {
+      push @out, sprintf <<'END', "bump$target", ($target || '$(V)');
 %s:
 	$(ABSPERLRUN) $(HELPERS)/bump-version --git $(VERSION) %s
 	$(RM_F) $(FIRST_MAKEFILE)
 	$(REMAKE)
 END
-      $include,
+    }
+
+    join('',
+      $dist_test,
+      "\n\n# --- Distar section:\n\n",
+      (map "$_ = $vars{$_}\n", sort keys %vars),
+      "\n",
+      @out,
+      ($include ? (
+        "\n",
+        "# --- Makefile.include:\n",
+        "\n",
+        $include,
+        "\n"
+      ) : ()),
       "\n",
     );
   }
