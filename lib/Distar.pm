@@ -189,6 +189,7 @@ END_FRAG
 
     my $distar_lib = File::Basename::dirname(__FILE__);
     my $helpers = File::Spec->catdir($distar_lib, 'Distar', 'helpers');
+    my $abshelpers = File::Spec->rel2abs($helpers);
 
     my $licenses = $self->{LICENSE} || $self->{META_ADD}{license} || $self->{META_MERGE}{license};
     my $authors = $self->{AUTHOR};
@@ -198,6 +199,7 @@ END_FRAG
     my %vars = (
       DISTAR_LIB => $self->quote_literal($distar_lib),
       HELPERS => $self->quote_literal($helpers),
+      ABSHELPERS => $self->quote_literal($abshelpers),
       REMAKE => join(' ', '$(PERLRUN)', '-I$(DISTAR_LIB)', '-MDistar', 'Makefile.PL', map { $self->quote_literal($_) } @ARGV),
       BRANCH => $self->{BRANCH} ||= 'master',
       CHANGELOG => $self->{CHANGELOG} ||= 'Changes',
@@ -301,6 +303,37 @@ END_FRAG
         '$(REMAKE)',
       ],
     ), @bump_targets;
+
+    if ( $self->{XS} && keys %{ $self->{XS} } ) {
+      my $ppport_options = '';
+
+      if (my $perl_version = $self->{MIN_PERL_VERSION}) {
+        $ppport_options .= " --compat-version=$perl_version";
+      }
+
+      $vars{PPPORT_OPTIONS} = $ppport_options;
+      $vars{PPPORT_FILE} = 'ppport.h';
+
+      push @out, (
+        'ppport-update:', [
+          '$(ABSPERLRUN) $(HELPERS)/ppport update $(PPPORT_FILE)',
+        ],
+        'ppport-patch:', [
+          '$(ABSPERLRUN) $(HELPERS)/ppport patch $(PPPORT_FILE) $(PPPORT_OPTIONS) $(XS_FILES)',
+        ],
+        'ppport-strip: create_distdir', [
+          $self->cd('$(DISTVNAME)',
+            '$(ABSPERLRUN) $(ABSHELPERS)/ppport strip $(PPPORT_FILE) $(XS_FILES)',
+          ),
+        ],
+        'pppatch: ppport-patch',
+        'check-ppport:' => [
+          '$(ABSPERLRUN) $(HELPERS)/ppport check $(PPPORT_FILE) $(PPPORT_OPTIONS) $(XS_FILES)',
+        ],
+        'preflight: check-ppport',
+        'distdir: ppport-strip',
+      );
+    }
 
     join('',
       $dist_test,

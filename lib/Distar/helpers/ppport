@@ -1,0 +1,152 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+sub filter_file {
+  my ($old, $filter) = @_;
+  my $new = "$old.$$.new";
+  $filter ||= sub { shift };
+
+  open my $in, '<', $old,
+    or die "unable to read $old: $!";
+  open my $out, '>', $new
+    or die "unable to write $new: $!";
+
+  while (<$in>) {
+    print $out $filter->($_);
+  }
+  close $in;
+  close $out;
+  rename $new, $old
+    or die "Unable to update $old: $!";
+}
+
+my $command = shift;
+my $ppport = shift;
+
+if ($command eq 'update') {
+  if (!eval { require Devel::PPPort }) {
+    print STDERR "Devel::PPPort not installed, cannot update!\n";
+    exit 1;
+  }
+
+  require HTTP::Tiny;
+  require version;
+  require JSON::PP;
+
+  my $local_ppport_version;
+  my $installed_ppport_version = Devel::PPPort->VERSION;
+  my $remote_ppport_version;
+
+  {
+    my $ua = HTTP::Tiny->new(verify_SSL => 1);
+    my $proto = eval { HTTP::Tiny->can_ssl } ? 'https' : 'http';
+    my $res = $ua->get("$proto://fastapi.metacpan.org/v1/module/Devel::PPPort");
+    if ($res->{success}) {
+      my $content = $res->{content};
+      my $data = JSON::PP::decode_json($content);
+      if (my $v = $data->{version}) {
+        $remote_ppport_version = version->new($v);
+      }
+    }
+  }
+
+  if ($remote_ppport_version) {
+    if ($remote_ppport_version > $installed_ppport_version) {
+      print STDERR "Updated version of Devel::PPPort ($remote_ppport_version) is available!\n";
+      print STDERR "Installed version is $installed_ppport_version.\n";
+    }
+  }
+  else {
+    print STDERR "Unable to check latest version of Devel::PPPort!\n";
+  }
+
+  if (-f $ppport and my $v = `"$^X" "$ppport" --version`) {
+    if ($v =~ /\AThis is .* (v?\d+(?:\.\d+)*)\.?\n?\z/) {
+      $local_ppport_version = version->new($1);
+    }
+    elsif ($v =~ /stripped/) {
+      print "Updating stripped $ppport to $installed_ppport_version.\n";
+      exec $^X, $ppport, '--unstrip';
+    }
+  }
+
+  if ($local_ppport_version > $installed_ppport_version) {
+    print STDERR "Refusing to downgrade $ppport $local_ppport_version using Devel::PPPort $installed_ppport_version.\n";
+    exit 1;
+  }
+  elsif ($local_ppport_version < $installed_ppport_version) {
+    print "Updating $ppport from $local_ppport_version to $installed_ppport_version.\n";
+    Devel::PPPort::WriteFile($ppport);
+  }
+  else {
+    print "$ppport ($local_ppport_version) is up to date.\n";
+  }
+}
+elsif ($command eq 'diff') {
+  exec $^X, $ppport, '--quiet', @ARGV;
+}
+elsif ($command eq 'check') {
+  my @args = @ARGV;
+  my $args = join ' ', map qq{"$_"}, @args;
+  my $output = `"$^X" "$ppport" --quiet $args`;
+  if ($output =~ /\S/) {
+    print STDERR "$ppport requires changes:\n";
+    print $output;
+    exit 1;
+  }
+}
+elsif ($command eq 'patch') {
+  my @args = @ARGV;
+  my @files = grep -f, @args;
+  my $out = system $^X, $ppport, '--copy=.pppatch', @args;
+  for my $file (@files) {
+    my $patched = "$file.pppatch";
+    if (-e $patched) {
+      rename $patched, $file;
+    }
+  }
+  exit $out;
+}
+elsif ($command eq 'strip') {
+  if (!-f $ppport) {
+    exit 0;
+  }
+
+  my @files = @ARGV;
+  my $have_ppport;
+  XS_FILES: for my $file (@files) {
+    open my $fh, '<', $file
+      or die "unable to read $file: $!";
+    while (<$fh>) {
+      if (m{^\s*#include "(?:\.\.?/)*\Q$ppport\E"}) {
+        $have_ppport = 1;
+        last XS_FILES;
+      }
+    }
+    close $fh;
+  }
+  if ($have_ppport) {
+    print "Stripping $ppport\n";
+
+    # break hardlinks
+    filter_file($ppport);
+
+    system $^X, $ppport, '--strip';
+  }
+  else {
+    print "Removing unused ppport.h";
+
+    filter_file('MANIFEST', sub {
+      my $line = shift;
+      $line =~ /\A\Q$ppport\E\s/ ? '' : $line;
+    });
+
+    unlink $ppport
+      or die "Unable to delete $ppport: $!";
+  }
+  exit 0;
+}
+else {
+  die "Invalid command!\n";
+}
