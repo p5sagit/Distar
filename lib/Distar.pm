@@ -135,57 +135,22 @@ sub write_manifest_skip {
 
   sub init_dist {
     my $self = shift;
-    my $pre_tar = $self->{TAR};
     my $out = $self->SUPER::init_dist(@_);
 
     my $dn = File::Spec->devnull;
     my $tar = $self->{TAR};
-    my $gtar;
-    my $set_user;
-    for my $maybe_tar ($tar, qw(gtar gnutar)) {
-      my $version = `$maybe_tar --version 2>$dn`;
-      if ($version =~ /GNU tar/) {
-        $tar = $maybe_tar;
-        $gtar = 1;
-        last;
-      }
-    }
+
     my $tarflags = $self->{TARFLAGS};
     if (my ($flags) = $tarflags =~ /^-?([cvhlLf]+)$/) {
       if ($flags =~ s/c// && $flags =~ s/f//) {
         $tarflags = '--format=ustar -c'.$flags.'f';
-        if ($gtar) {
-          $tarflags = '--owner=0 --group=0 '.$tarflags;
-          $set_user = 1;
-        }
-      }
-    }
-
-    if (!$set_user) {
-      my $warn = '';
-      if ($> >= 2**21) {
-        $warn .= "uid ($>)";
-      }
-      if ($) >= 2**21) {
-        $warn .= ($warn ? ' and ' : '').'gid('.(0+$)).')';
-      }
-      if ($warn) {
-        warn "Current $warn too large to create portable dist archives!  Max is ".(2**21-1).".\n"
-          ."Dist creation will most likely fail.  Install GNU tar and re-run Makefile.PL to fix this issue.\n";
-        my @try;
-        my $brew = `which brew 2>$dn`;
-        chomp $brew;
-        if (-x $brew) {
-          push @try, 'brew install gnu-tar';
-        }
-        my $ports = `which ports 2>$dn`;
-        chomp $ports;
-        if (-x $ports) {
-          push @try, 'sudo ports install gnutar';
-        }
-        if (@try) {
-          warn "Try" . (@try > 1 ? ' one of' : '') . ":\n"
-            . join '', map "    $_\n", @try;
+        my $me = __FILE__;
+        for my $options ('--owner=0 --group=0', '--uid=0 --gid=0') {
+          my $try = `$tar -c $options "$me" 2>$dn`;
+          if (length $try) {
+            $tarflags = "$options $tarflags";
+            last;
+          }
         }
       }
     }

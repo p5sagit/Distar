@@ -56,6 +56,10 @@ if (@extra) {
 if (@missing) {
   $message .= "$tarball is missing files:\n" . join '', map "  $_\n", @missing;
 }
-die $message
-  if $message;
+if ($message) {
+  die $message . <<'END_MESSAGE';
+
+This may happen if the file attributes are not compatible with the ustar format.
+END_MESSAGE
+}
 exit 0;
