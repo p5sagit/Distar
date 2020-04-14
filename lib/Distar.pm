@@ -8,7 +8,7 @@ use File::Spec ();
 use File::Basename ();
 
 our $VERSION = '0.003000';
-$VERSION = eval $VERSION;
+$VERSION =~ tr/_//d;
 
 my $MM_VER = eval $ExtUtils::MakeMaker::VERSION;
 
