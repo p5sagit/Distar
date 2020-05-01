@@ -161,6 +161,19 @@ sub write_manifest_skip {
     $out;
   }
 
+  sub libscan {
+    my $self = shift;
+    my ($path) = @_;
+
+    # default setup for Distar involves checking it out as a subdirectory at
+    # the top of the dist.  Without NORECURS, EUMM would try to include
+    # Distar's Makefile.PL.  Prevent EUMM from looking inside.
+    return ''
+      if $path eq 'Distar';
+
+    $self->SUPER::libscan(@_);
+  }
+
   sub tarfile_target {
     my $self = shift;
     my $out = $self->SUPER::tarfile_target(@_);
