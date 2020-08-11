@@ -224,73 +224,101 @@ END_FRAG
 
     my @out;
 
-    push @out, <<'END';
-preflight: check-version check-manifest check-cpan-upload
-	$(ABSPERLRUN) $(HELPERS)/preflight $(VERSION) --changelog=$(CHANGELOG) --branch=$(BRANCH)
-check-version:
-	$(ABSPERLRUN) $(HELPERS)/check-version $(VERSION) $(TO_INST_PM) $(EXE_FILES)
-check-manifest:
-	$(ABSPERLRUN) $(HELPERS)/check-manifest
-check-cpan-upload:
-	$(NOECHO) cpan-upload -h $(DEV_NULL_STDOUT)
-releasetest:
-	$(MAKE) disttest RELEASE_TESTING=1 DISTTEST_MAKEFILE_PARAMS="PREREQ_FATAL=1" PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""
-	$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE || $(ECHO) "Failed to generate $(DISTVNAME)/LICENSE!" >&2
-	$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE
-release: preflight
-	$(MAKE) releasetest
-	$(GET_CHANGELOG) -p"Release commit for $(VERSION)" | git commit -a -F -
-	$(GET_CHANGELOG) -p"release v$(VERSION)" | git tag -a -F - "v$(VERSION)"
-	$(RM_RF) $(DISTVNAME)
-	$(MAKE) $(DISTVNAME).tar$(SUFFIX)
-	$(NOECHO) $(MAKE) pushrelease FAKE_RELEASE=$(FAKE_RELEASE)
-pushrelease ::
-	$(NOECHO) $(NOOP)
-pushrelease$(FAKE_RELEASE) ::
-	cpan-upload $(DISTVNAME).tar$(SUFFIX)
-	git push origin v$(VERSION) HEAD
-distdir: readmefile licensefile
-readmefile: create_distdir
-	$(NOECHO) $(TEST_F) $(DISTVNAME)/README || $(MAKE) $(DISTVNAME)/README
-$(DISTVNAME)/README: $(VERSION_FROM)
-	$(NOECHO) $(MKPATH) $(DISTVNAME)
-	pod2text $(VERSION_FROM) >$(DISTVNAME)/README
-	$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) README
-distsignature: readmefile licensefile
-licensefile: create_distdir
-	$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE || $(MAKE) $(DISTVNAME)/LICENSE || $(TRUE)
-$(DISTVNAME)/LICENSE: Makefile.PL
-	$(NOECHO) $(MKPATH) $(DISTVNAME)
-	$(ABSPERLRUN) $(HELPERS)/generate-license -o $(DISTVNAME)/LICENSE $(AUTHORS) $(LICENSES)
-	$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) LICENSE
-disttest: distmanicheck
-distmanicheck: create_distdir
-	cd $(DISTVNAME) && $(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"
-nextrelease:
-	$(ABSPERLRUN) $(HELPERS)/add-changelog-heading --git $(VERSION) $(CHANGELOG)
-refresh:
-	$(UPDATE_DISTAR)
-	$(RM_F) $(FIRST_MAKEFILE)
-	$(REMAKE)
-END
+    push @out, (
+      'preflight: check-version check-manifest check-cpan-upload' => [
+        '$(ABSPERLRUN) $(HELPERS)/preflight $(VERSION) --changelog=$(CHANGELOG) --branch=$(BRANCH)',
+      ],
+      'check-version:' => [
+        '$(ABSPERLRUN) $(HELPERS)/check-version $(VERSION) $(TO_INST_PM) $(EXE_FILES)',
+      ],
+      'check-manifest:' => [
+        '$(ABSPERLRUN) $(HELPERS)/check-manifest',
+      ],
+      'check-cpan-upload:' => [
+        '$(NOECHO) cpan-upload -h $(DEV_NULL_STDOUT)',
+      ],
+      'releasetest:' => [
+        '$(MAKE) disttest RELEASE_TESTING=1 DISTTEST_MAKEFILE_PARAMS="PREREQ_FATAL=1" PASTHRU="$(PASTHRU) TEST_FILES=\"$(TEST_FILES)\""',
+        '$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE || $(ECHO) "Failed to generate $(DISTVNAME)/LICENSE!" >&2',
+        '$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE',
+      ],
+      'release: preflight' => [
+        '$(MAKE) releasetest',
+        '$(GET_CHANGELOG) -p"Release commit for $(VERSION)" | git commit -a -F -',
+        '$(GET_CHANGELOG) -p"release v$(VERSION)" | git tag -a -F - "v$(VERSION)"',
+        '$(RM_RF) $(DISTVNAME)',
+        '$(MAKE) $(DISTVNAME).tar$(SUFFIX)',
+        '$(NOECHO) $(MAKE) pushrelease FAKE_RELEASE=$(FAKE_RELEASE)',
+      ],
+      'pushrelease ::' => [
+        '$(NOECHO) $(NOOP)',
+      ],
+      'pushrelease$(FAKE_RELEASE) ::' => [
+        'cpan-upload $(DISTVNAME).tar$(SUFFIX)',
+        'git push origin v$(VERSION) HEAD',
+      ],
+      'distdir: readmefile licensefile',
+      'readmefile: create_distdir' => [
+        '$(NOECHO) $(TEST_F) $(DISTVNAME)/README || $(MAKE) $(DISTVNAME)/README',
+      ],
+      '$(DISTVNAME)/README: $(VERSION_FROM)' => [
+        '$(NOECHO) $(MKPATH) $(DISTVNAME)',
+        'pod2text $(VERSION_FROM) >$(DISTVNAME)/README',
+        '$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) README',
+      ],
+      'distsignature: readmefile licensefile',
+      'licensefile: create_distdir' => [
+        '$(NOECHO) $(TEST_F) $(DISTVNAME)/LICENSE || $(MAKE) $(DISTVNAME)/LICENSE || $(TRUE)',
+      ],
+      '$(DISTVNAME)/LICENSE: Makefile.PL' => [
+        '$(NOECHO) $(MKPATH) $(DISTVNAME)',
+        '$(ABSPERLRUN) $(HELPERS)/generate-license -o $(DISTVNAME)/LICENSE $(AUTHORS) $(LICENSES)',
+        '$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) LICENSE',
+      ],
+      'disttest: distmanicheck',
+      'distmanicheck: create_distdir' => [
+        $self->cd('$(DISTVNAME)',
+          '$(ABSPERLRUN) "-MExtUtils::Manifest=manicheck" -e "exit manicheck"',
+        ),
+      ],
+      'nextrelease:' => [
+        '$(ABSPERLRUN) $(HELPERS)/add-changelog-heading --git $(VERSION) $(CHANGELOG)',
+      ],
+      'refresh:' => [
+        '$(UPDATE_DISTAR)',
+        '$(RM_F) $(FIRST_MAKEFILE)',
+        '$(REMAKE)',
+      ],
+    );
+
     my @bump_targets =
       grep { $include !~ /^bump$_(?: +\w+)*:/m } ('', 'minor', 'major');
 
-    for my $target (@bump_targets) {
-      push @out, sprintf <<'END', "bump$target", ($target || '$(V)');
-%s:
-	$(ABSPERLRUN) $(HELPERS)/bump-version --git $(VERSION) %s
-	$(RM_F) $(FIRST_MAKEFILE)
-	$(REMAKE)
-END
-    }
+    push @out, map +(
+      "bump$_:" => [
+        '$(ABSPERLRUN) $(HELPERS)/bump-version --git $(VERSION) '.($_ || '$(V)'),
+        '$(RM_F) $(FIRST_MAKEFILE)',
+        '$(REMAKE)',
+      ],
+    ), @bump_targets;
 
     join('',
       $dist_test,
       "\n\n# --- Distar section:\n\n",
       (map "$_ = $vars{$_}\n", sort keys %vars),
       "\n",
-      @out,
+      (map {
+        my @lines;
+        if (ref) {
+          @lines = @$_;
+          s/^\t?/\t/mg for @lines;
+        }
+        else {
+          @lines = $_;
+        }
+        s/\n?\z/\n/ for @lines;
+        @lines;
+      } @out),
       ($include ? (
         "\n",
         "# --- Makefile.include:\n",
