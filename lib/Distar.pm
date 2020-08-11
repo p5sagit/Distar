@@ -78,6 +78,22 @@ sub write_manifest_skip {
 {
   package Distar::MM;
 
+  sub _gen_make_section {
+    return join '',
+      map {
+        my @lines;
+        if (ref) {
+          @lines = @$_;
+          s/^\t?/\t/mg for @lines;
+        }
+        else {
+          @lines = $_;
+        }
+        s/\n?\z/\n/ for @lines;
+        @lines;
+      } @_;
+  }
+
   sub new {
     my ($class, $args) = @_;
     my %test = %{$args->{test}||{}};
@@ -177,9 +193,9 @@ sub write_manifest_skip {
   sub tarfile_target {
     my $self = shift;
     my $out = $self->SUPER::tarfile_target(@_);
-    my $verify = <<'END_FRAG';
-	$(ABSPERLRUN) $(HELPERS)/verify-tarball $(DISTVNAME).tar $(DISTVNAME)/MANIFEST --tar="$(TAR)"
-END_FRAG
+    my $verify = _gen_make_section([
+      '$(ABSPERLRUN) $(HELPERS)/verify-tarball $(DISTVNAME).tar $(DISTVNAME)/MANIFEST --tar="$(TAR)"',
+    ]);
     $out =~ s{(\$\(TAR\).*\n)}{$1$verify};
     $out;
   }
@@ -307,18 +323,7 @@ END_FRAG
       "\n\n# --- Distar section:\n\n",
       (map "$_ = $vars{$_}\n", sort keys %vars),
       "\n",
-      (map {
-        my @lines;
-        if (ref) {
-          @lines = @$_;
-          s/^\t?/\t/mg for @lines;
-        }
-        else {
-          @lines = $_;
-        }
-        s/\n?\z/\n/ for @lines;
-        @lines;
-      } @out),
+      _gen_make_section(@out),
       ($include ? (
         "\n",
         "# --- Makefile.include:\n",
