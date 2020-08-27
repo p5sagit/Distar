@@ -30,6 +30,7 @@ sub author {
   our $Author = shift;
   $Author = [ $Author ]
     if !ref $Author;
+  1;
 }
 
 our @Manifest = (
@@ -46,6 +47,7 @@ our @Manifest = (
 
 sub manifest_include {
   push @Manifest, @_;
+  1;
 }
 
 sub readme_generator {
