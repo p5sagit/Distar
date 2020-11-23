@@ -14,10 +14,21 @@ use ExtUtils::Manifest qw(filecheck maniread maniskip manicheck mkmanifest);
     }
 
     my $read = maniread;
-    my $skip = maniskip;
+    my @files = sort keys %$read;
+
+    my %lc;
+    for my $file (@files) {
+      warn $file;
+      if (my $other = $lc{lc $file}) {
+        die "ERROR: Multiple files only differing by case:\n\t$file\n\t$other\n";
+      }
+      $lc{lc $file} = $file;
+    }
 
     my @missing = filecheck;
-    my @remove = grep $skip->($_), sort keys %$read;
+
+    my $skip = maniskip;
+    my @remove = grep $skip->($_), @files;
 
     exit 0
       if !(@missing || @remove);
