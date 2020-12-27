@@ -18,7 +18,6 @@ use ExtUtils::Manifest qw(filecheck maniread maniskip manicheck mkmanifest);
 
     my %lc;
     for my $file (@files) {
-      warn $file;
       if (my $other = $lc{lc $file}) {
         die "ERROR: Multiple files only differing by case:\n\t$file\n\t$other\n";
       }
