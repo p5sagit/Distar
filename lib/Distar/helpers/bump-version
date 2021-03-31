@@ -183,7 +183,7 @@ sub version_parts {
 sub bump_version {
   my ($version, $new) = @_;
 
-  my %bump_part = (major => 0, minor => 1, bugfix => 2, last => -1);
+  my %bump_part = (major => 0, minor => 1, bugfix => 2, patch => 2, last => -1);
   my $bump_this = $bump_part{$new||'last'};
 
   my $new_vstring;
