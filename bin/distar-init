@@ -3,6 +3,11 @@
 use strict;
 use warnings FATAL => 'all';
 use File::Path qw(mkpath);
+use Data::Dumper qw();
+
+sub _dump_var {
+  join q[, ], Data::Dumper->new( [@_] )->Indent(0)->Purity(1)->Useqq(0)->Quotekeys(0)->Sortkeys(1)->Terse(1)->Dump();
+}
 
 my $project = $ARGV[0] or die "No project name passed";
 
@@ -11,6 +16,17 @@ my @parts = split('-', $project);
 my $lib_file = join('/', 'lib', @parts).".pm";
 
 my $author = $ENV{DISTAR_INIT_AUTHOR} or die "DISTAR_INIT_AUTHOR unset";
+
+my $include_postlude = sprintf "author %s;\n", _dump_var($author);
+
+if ( $ENV{DISTAR_INIT_GITHUB_USER} ) {
+  my %github_args;
+  $github_args{user} = $ENV{DISTAR_INIT_GITHUB_USER};
+  if ( $ENV{DISTAR_INIT_GITHUB_ISSUES} ) {
+    $github_args{issues} = 1;
+  }
+  $include_postlude .= sprintf qq[github %s;\n], _dump_var( \%github_args );
+}
 
 mkpath "${project}/maint";
 
@@ -39,7 +55,7 @@ close($mpl_main);
 open my $mpl_maint, '>', "${project}/maint/Makefile.PL.include"
   or die "couldn't open maint/Makefile.PL.include: $!";
 
-print $mpl_maint sprintf(<<'END', $author);
+print $mpl_maint <<'END' . $include_postlude;
 BEGIN {
   -e 'Distar'
     or system("git clone git://git.shadowcat.co.uk/p5sagit/Distar.git")
@@ -47,7 +63,6 @@ BEGIN {
 use lib 'Distar/lib';
 use Distar;
 
-author '%s';
 END
 
 close($mpl_maint);
