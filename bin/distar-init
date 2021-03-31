@@ -40,10 +40,7 @@ open my $mpl_maint, '>', "${project}/maint/Makefile.PL.include"
   or die "couldn't open maint/Makefile.PL.include: $!";
 
 print $mpl_maint sprintf(<<'END', $author);
-BEGIN {
-  -e 'Distar'
-    or system("git clone git://git.shadowcat.co.uk/p5sagit/Distar.git")
-}
+BEGIN { -e 'Distar' or system qw(git clone git://git.shadowcat.co.uk/p5sagit/Distar.git) }
 use lib 'Distar/lib';
 use Distar;
 
