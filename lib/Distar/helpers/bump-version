@@ -227,7 +227,12 @@ sub bump_version {
         my $cut_len = $bump_this * 3;
         $dec_len = $cut_len
           if $dec_len < $cut_len;
-        $new_decimal =~ s/(\..{1,$cut_len}).*/$1/;
+        if ($cut_len) {
+          $new_decimal =~ s/(\..{1,$cut_len}).*/$1/;
+        }
+        else {
+          $new_decimal =~ s/\..*//;
+        }
       }
       $new_decimal += 10 ** -($bump_this == -1 ? $dec_len : ($bump_this * 3));
       $new_decimal = sprintf "%.${dec_len}f", $new_decimal;
