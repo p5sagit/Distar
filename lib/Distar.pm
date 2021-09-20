@@ -229,6 +229,7 @@ sub write_manifest_skip {
           ? 'git -C $(DISTAR_LIB) pull'
           : '$(ECHO) "Distar code is not in a git repo, unable to update!"'
       ),
+      README_FROM => $self->{ABSTRACT_FROM} || $self->{VERSION_FROM},
     );
 
     my $dist_test = $self->SUPER::dist_test(@_);
@@ -279,9 +280,9 @@ sub write_manifest_skip {
       'readmefile: create_distdir' => [
         '$(NOECHO) $(TEST_F) $(DISTVNAME)/README || $(MAKE) $(DISTVNAME)/README',
       ],
-      '$(DISTVNAME)/README: $(VERSION_FROM)' => [
+      '$(DISTVNAME)/README: $(README_FROM)' => [
         '$(NOECHO) $(MKPATH) $(DISTVNAME)',
-        'pod2text $(VERSION_FROM) >$(DISTVNAME)/README',
+        'pod2text $(README_FROM) >$(DISTVNAME)/README',
         '$(NOECHO) $(ABSPERLRUN) $(HELPERS)/add-to-manifest -d $(DISTVNAME) README',
       ],
       'distsignature: readmefile licensefile',
